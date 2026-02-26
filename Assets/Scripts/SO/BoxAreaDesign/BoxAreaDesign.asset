@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 605f11cd95c94f41b301277710b40e87, type: 3}
+  m_Name: BoxAreaDesign
+  m_EditorClassIdentifier: Assembly-CSharp::Core.BoxAreaDesign
+  _boxAreaDesignStruct:
+  - GridPosition: {x: 0, y: 0}
+    BoxColor: 0
+  - GridPosition: {x: 0, y: 1}
+    BoxColor: 1
+  - GridPosition: {x: 0, y: 2}
+    BoxColor: 0
+  - GridPosition: {x: 1, y: 0}
+    BoxColor: 2
+  - GridPosition: {x: 1, y: 1}
+    BoxColor: 0
+  - GridPosition: {x: 1, y: 2}
+    BoxColor: 1
+  - GridPosition: {x: 2, y: 0}
+    BoxColor: 0
+  - GridPosition: {x: 2, y: 1}
+    BoxColor: 2
+  - GridPosition: {x: 2, y: 2}
+    BoxColor: 2
