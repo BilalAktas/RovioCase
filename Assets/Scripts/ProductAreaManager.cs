@@ -65,6 +65,8 @@ namespace Core
                     node.SetCube(cube);
                     cubeClone.transform.localPosition = worldPosition;
                     cubeClone.GetComponent<Cube>().SetNode(node);
+
+                    cubeClone.name = $"cube {cubeClone.transform.GetSiblingIndex()}";
                     
                     var c = design[x, y];
                     foreach (var property in _boxProperties)
@@ -162,7 +164,7 @@ namespace Core
 
         public static bool IsFirstColumnToGet(ProductDepthDirection dir, Cube cube)
         {
-            Debug.Log($"dir {dir} -- {cube.name} -- get");
+            //Debug.Log($"dir {dir} -- {cube.name} -- get -- {_depthColumns[dir].Contains(cube.CurrentNode)}");
             if (_depthColumns[dir].Contains(cube.CurrentNode))
                 return true;
 
@@ -196,16 +198,17 @@ namespace Core
 
         public static int GetDepthColumnIndex(ProductDepthDirection dir, ProductGridNode node)
         {
-            var index = 0;
-            foreach (var depthNode in _depthColumns[dir])
-            {
-                if (depthNode.GridPosition == node.GridPosition)
-                    break;
-                
-                index++;
-            }
+            int x = node.GridPosition.x;
+            int y = node.GridPosition.y;
 
-            return index;
+            return dir switch
+            {
+                ProductDepthDirection.Up    => 8 - x,
+                ProductDepthDirection.Right => y,
+                ProductDepthDirection.Down  => x,
+                ProductDepthDirection.Left  => 8 - y,
+                _ => 0
+            };
         }
     }
 }

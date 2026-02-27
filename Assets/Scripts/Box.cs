@@ -15,8 +15,11 @@ namespace Core
         [SerializeField] private float _speed;
         private float _timer;
         private bool _startedMoving;
-
-        [Header("Ray")] private Cube _lastCube;
+        private Vector3 _prevDir = Vector3.forward;
+        private float _cooldown;
+        
+        [Header("Ray")] 
+        private Cube _lastCube;
         [SerializeField] private Transform[] _cubeSlots;
         private readonly Dictionary<Transform, Cube> _cubes = new();
         private Cube _depthCube;
@@ -34,6 +37,11 @@ namespace Core
             foreach (var slot in _cubeSlots)
                 _cubes[slot] = null;
 
+            ClearAllLockedColumns();
+        }
+
+        private void ClearAllLockedColumns()
+        {
             _lockedColumns[ProductDepthDirection.Up] = new HashSet<int>();
             _lockedColumns[ProductDepthDirection.Right] = new HashSet<int>();
             _lockedColumns[ProductDepthDirection.Down] = new HashSet<int>();
@@ -98,14 +106,35 @@ namespace Core
             Move();
             CollectCube();
         }
-
+     
         private void Move()
         {
             _timer += _speed * Time.deltaTime;
 
             transform.position = _splineContainer.EvaluatePosition(_timer);
             transform.position += Vector3.up * .1f;
-            transform.forward = _splineContainer.EvaluateTangent(_timer);
+            
+            Vector3 tan = _splineContainer.EvaluateTangent(_timer);
+            if (tan.sqrMagnitude > 1e-6f)
+            {
+                var dir = tan.normalized;
+                transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+                
+                _cooldown -= Time.deltaTime;
+                var angle = Vector3.Angle(_prevDir, dir);
+
+                if (_cooldown <= 0f && angle > 45f)
+                {
+                    _cooldown = 0.2f;
+
+                    _lastCube = null;
+                    ClearAllLockedColumns();
+                    EventBus.Raise(new OnReCalculateDepthEvent());
+                }
+
+                _prevDir = dir;
+            }
+
 
             if (_timer >= 1)
             {
@@ -128,7 +157,7 @@ namespace Core
                     {
                         if (!ProductAreaManager.IsLastColumn(GetBoxDirection(), cube.CurrentNode))
                         {
-                            EventBus.Raise(new OnReCalculateDepthEvent());    
+                            EventBus.Raise(new OnReCalculateDepthEvent());
                         }
                     }
 
@@ -145,13 +174,17 @@ namespace Core
                                     var index = ProductAreaManager.GetDepthColumnIndex(GetBoxDirection(),
                                         _lastCube.CurrentNode);
                                  
+                                    //Debug.Log($"lockedCheck {GetBoxDirection()} -- {index} -- {cube.name} -- {_lockedColumns[GetBoxDirection()].Contains(index)}");
+                                    
                                     if (!_lockedColumns[GetBoxDirection()].Contains(index))
                                     {
-                                         _lockedColumns[GetBoxDirection()].Add(index);
-                                         if (cube.Properties.BoxColor != _boxProperties.BoxColor) return;
-                                         _lastCube.OnSelectedByBox(slot);
-                                         _cubes[slot] = _lastCube;
-                                         CheckAllSlots();
+                                        if (cube.Properties.BoxColor != _boxProperties.BoxColor) return;
+                                        
+                                        //Debug.Log($"add locked {index} - {GetBoxDirection()} - {cube.name}");
+                                        _lockedColumns[GetBoxDirection()].Add(index);
+                                        _lastCube.OnSelectedByBox(slot);
+                                        _cubes[slot] = _lastCube;
+                                        CheckAllSlots();
                                     }
 
                                     break;
@@ -198,7 +231,6 @@ namespace Core
 
         public void MoveToBench(BenchArea area)
         {
-            
             transform.DOComplete();
             var midPoint = (transform.position + area.Visual.transform.position) / 2f + Vector3.up * 5f;
 
@@ -210,10 +242,7 @@ namespace Core
 
             transform.DOPath(poses.ToArray(), .5f, PathType.CatmullRom).SetEase(Ease.InOutSine).OnComplete(() =>
             {
-                _lockedColumns[ProductDepthDirection.Up].Clear();
-                _lockedColumns[ProductDepthDirection.Right].Clear();
-                _lockedColumns[ProductDepthDirection.Down].Clear();
-                _lockedColumns[ProductDepthDirection.Left].Clear();
+                ClearAllLockedColumns();
             });
         }
     }

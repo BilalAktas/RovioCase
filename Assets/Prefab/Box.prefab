@@ -547,7 +547,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e68a040a2cf4436b6adc47d3aa43389, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Core.Box
-  _speed: 0.15
+  _speed: 0.25
   _cubeSlots:
   - {fileID: 1847359127092669985}
   - {fileID: 145110121099964581}

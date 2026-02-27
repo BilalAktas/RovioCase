@@ -11,14 +11,28 @@ namespace Core
         private void Start()
         {
             EventBus.Subscribe<OnBoxEndMoveEvent>(OnBoxEndMove);
+            EventBus.Subscribe<OnBoxMovedFromBoxAreaEvent>(OnBoxMovedFromBoxArea);
             CreateBench();
         }
 
         private void OnDestroy()
         {
             EventBus.Unsubscribe<OnBoxEndMoveEvent>(OnBoxEndMove);
+            EventBus.Unsubscribe<OnBoxMovedFromBoxAreaEvent>(OnBoxMovedFromBoxArea);
         }
 
+        private void OnBoxMovedFromBoxArea(OnBoxMovedFromBoxAreaEvent data)
+        {
+            foreach (var area in _areas)
+            {
+                if (area.CurrentBox == data.Box)
+                {
+                    area.SetBox(null);
+                    break;
+                }
+            }
+        }
+        
         private void CreateBench()
         {
             var pos = new Vector3(-6, 0, 0);
