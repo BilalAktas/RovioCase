@@ -6,6 +6,13 @@ namespace Core
         Blue,
         Green
     }
+    public enum ProductDepthDirection
+    {
+        Up,
+        Right,
+        Down,
+        Left
+    }
     public class Enums
     {
     }

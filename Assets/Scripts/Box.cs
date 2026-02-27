@@ -11,12 +11,18 @@ namespace Core
         private BoxGridNode _node;
         private bool _clickableStatus;
 
-        [Header("MoveOnContainer")]
-        private SplineContainer _splineContainer;
+        [Header("MoveOnContainer")] private SplineContainer _splineContainer;
         [SerializeField] private float _speed;
         private float _timer;
         private bool _startedMoving;
-        
+
+        [Header("Ray")] private Cube _lastCube;
+        [SerializeField] private Transform[] _cubeSlots;
+        private readonly Dictionary<Transform, Cube> _cubes = new();
+        private Cube _depthCube;
+        private Dictionary<ProductDepthDirection, HashSet<int>> _lockedColumns = new();
+        [SerializeField] private LayerMask _cubeLayer;
+
         public void SetProperties(BoxProperties properties, BoxGridNode node)
         {
             _boxProperties = properties;
@@ -25,6 +31,13 @@ namespace Core
                 renderer.material = _boxProperties.ColorMaterial;
 
             _splineContainer = FindFirstObjectByType<SplineContainer>();
+            foreach (var slot in _cubeSlots)
+                _cubes[slot] = null;
+
+            _lockedColumns[ProductDepthDirection.Up] = new HashSet<int>();
+            _lockedColumns[ProductDepthDirection.Right] = new HashSet<int>();
+            _lockedColumns[ProductDepthDirection.Down] = new HashSet<int>();
+            _lockedColumns[ProductDepthDirection.Left] = new HashSet<int>();
         }
 
         public bool Clickable()
@@ -34,9 +47,11 @@ namespace Core
 
         public void Select()
         {
-            _node.SetBox(null);
-            _node = null;
+            if (_startedMoving) return;
             
+            _node?.SetBox(null);
+            _node = null;
+
             var e = new OnBoxMovedFromBoxAreaEvent()
             {
                 Box = this
@@ -55,9 +70,11 @@ namespace Core
 
         private void JumpOnContainer()
         {
+            _timer = 0;
             transform.DOComplete();
-            
+
             Vector3 pos = _splineContainer.EvaluatePosition(0);
+            pos += Vector3.up * .1f;
             var midPoint = (transform.position + pos) / 2f + Vector3.up * 5f;
 
             var poses = new List<Vector3>()
@@ -65,24 +82,29 @@ namespace Core
                 midPoint,
                 pos
             };
-            
+
             transform.DOScale(new Vector3(1.2f, 0.8f, 1.2f), .02f)
                 .SetLoops(2, LoopType.Yoyo).OnComplete(() =>
                 {
-                    transform.DOPath(poses.ToArray(), .5f, PathType.CatmullRom).SetEase(Ease.InOutSine).OnComplete(() =>
-                    {
-                        _startedMoving = true;
-                    });
+                    transform.DOPath(poses.ToArray(), .5f, PathType.CatmullRom).SetEase(Ease.InOutSine)
+                        .OnComplete(() => { _startedMoving = true; });
                 });
         }
-        
+
         private void Update()
         {
             if (!_startedMoving) return;
-            
+
+            Move();
+            CollectCube();
+        }
+
+        private void Move()
+        {
             _timer += _speed * Time.deltaTime;
 
             transform.position = _splineContainer.EvaluatePosition(_timer);
+            transform.position += Vector3.up * .1f;
             transform.forward = _splineContainer.EvaluateTangent(_timer);
 
             if (_timer >= 1)
@@ -96,8 +118,87 @@ namespace Core
             }
         }
 
+        private void CollectCube()
+        {
+            if (Physics.Raycast(transform.position, transform.right, out var hit, _cubeLayer))
+            {
+                if (hit.transform.TryGetComponent(out Cube cube))
+                {
+                    if (_lastCube != null && cube != _lastCube)
+                    {
+                        if (!ProductAreaManager.IsLastColumn(GetBoxDirection(), cube.CurrentNode))
+                        {
+                            EventBus.Raise(new OnReCalculateDepthEvent());    
+                        }
+                    }
+
+                    if (cube != _lastCube)
+                    {
+                        if (ProductAreaManager.IsFirstColumnToGet(GetBoxDirection(), cube))
+                        {
+                            _lastCube = cube;
+                            
+                            foreach (var slot in _cubeSlots)
+                            {
+                                if (_cubes[slot] == null)
+                                {
+                                    var index = ProductAreaManager.GetDepthColumnIndex(GetBoxDirection(),
+                                        _lastCube.CurrentNode);
+                                 
+                                    if (!_lockedColumns[GetBoxDirection()].Contains(index))
+                                    {
+                                         _lockedColumns[GetBoxDirection()].Add(index);
+                                         if (cube.Properties.BoxColor != _boxProperties.BoxColor) return;
+                                         _lastCube.OnSelectedByBox(slot);
+                                         _cubes[slot] = _lastCube;
+                                         CheckAllSlots();
+                                    }
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void CheckAllSlots()
+        {
+            foreach (var slot in _cubeSlots)
+            {
+                if (_cubes[slot] == null)
+                {
+                    return;
+                }
+            }
+
+            this.enabled = false;
+            _startedMoving = false;
+            transform.DORotate(Vector3.one, .5f, RotateMode.FastBeyond360).SetEase(Ease.Linear);
+            transform.DOMove(transform.position + Vector3.up * 2f, .5f).OnComplete(() =>
+            {
+                transform.DOScale(Vector3.zero, .5f).OnComplete(() => { EventBus.Raise(new OnBoxFilledEvent()); });
+            });
+        }
+
+        private ProductDepthDirection GetBoxDirection()
+        {
+            if (transform.localEulerAngles.y < -85f)
+                return ProductDepthDirection.Up;
+            else if (transform.localEulerAngles.y > -2f && transform.localEulerAngles.y < 2f)
+                return ProductDepthDirection.Right;
+            else if (transform.localEulerAngles.y > 88f && transform.localEulerAngles.y < 92f)
+                return ProductDepthDirection.Down;
+            else if (transform.localEulerAngles.y > 177 && transform.localEulerAngles.y < 182f)
+                return ProductDepthDirection.Left;
+
+            return ProductDepthDirection.Up;
+        }
+
         public void MoveToBench(BenchArea area)
         {
+            
             transform.DOComplete();
             var midPoint = (transform.position + area.Visual.transform.position) / 2f + Vector3.up * 5f;
 
@@ -106,10 +207,13 @@ namespace Core
                 midPoint,
                 area.Visual.transform.position
             };
-            
+
             transform.DOPath(poses.ToArray(), .5f, PathType.CatmullRom).SetEase(Ease.InOutSine).OnComplete(() =>
             {
-               
+                _lockedColumns[ProductDepthDirection.Up].Clear();
+                _lockedColumns[ProductDepthDirection.Right].Clear();
+                _lockedColumns[ProductDepthDirection.Down].Clear();
+                _lockedColumns[ProductDepthDirection.Left].Clear();
             });
         }
     }
