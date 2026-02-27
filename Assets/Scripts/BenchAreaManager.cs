@@ -35,7 +35,7 @@ namespace Core
         
         private void CreateBench()
         {
-            var pos = new Vector3(-6, 0, 0);
+            var pos = new Vector3(-7, 0, 0);
             for (var i = 0; i < 5; i++)
             {
                 var clone = Instantiate(_benchAreaVisualPrefab, transform);
@@ -44,7 +44,7 @@ namespace Core
                 var bench = new BenchArea(clone);
                 _areas.Add(bench);
                 
-                pos.x += 3f;
+                pos.x += 4f;
             }
         }
 

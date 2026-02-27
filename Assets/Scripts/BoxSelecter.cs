@@ -9,6 +9,9 @@ namespace Core
 
         private void Update()
         {
+            // if(Input.GetMouseButtonDown(0))
+            //     HandleStartDrag(Input.mousePosition);
+            
             if (Input.touchCount <= 0) return;
             
             var input = Input.GetTouch(0);

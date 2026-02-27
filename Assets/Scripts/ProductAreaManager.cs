@@ -61,7 +61,7 @@ namespace Core
                     clone.transform.localPosition = worldPosition;
 
                     var cubeClone = Instantiate(_cubePrefab, transform);
-                    var cube = _cubePrefab.GetComponent<Cube>();
+                    var cube = cubeClone.GetComponent<Cube>();
                     node.SetCube(cube);
                     cubeClone.transform.localPosition = worldPosition;
                     cubeClone.GetComponent<Cube>().SetNode(node);

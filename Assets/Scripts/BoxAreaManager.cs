@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using DG.Tweening;
 using UnityEngine;
 
 namespace Core
@@ -13,6 +12,7 @@ namespace Core
         [SerializeField] private Vector2Int _gridSize;
         [SerializeField] private GameObject _nodePrefab;
         private Vector3 _bottomLeft;
+        [SerializeField] private Vector3 _worldPositionOffset;
         [Header("Box")] 
         [SerializeField] private BoxProperties[] _boxProperties;
         [SerializeField] private GameObject _boxPrefab;
@@ -45,6 +45,7 @@ namespace Core
                 {
                     var worldPosition = _bottomLeft + new Vector3(x * _nodeSize.x, 0, y * _nodeSize.y);
                     worldPosition.y = 0;
+                    worldPosition.z += _worldPositionOffset.z;
                     var gridPosition = new Vector2Int(x, y);
                     var clone = Instantiate(_nodePrefab, transform);
                     var node = new BoxGridNode(worldPosition, gridPosition);
@@ -62,7 +63,7 @@ namespace Core
                 var clone = Instantiate(_boxPrefab, transform);
                 var rp = _boxProperties.FirstOrDefault(x => x.BoxColor == design.BoxColor);
                 var box = clone.GetComponent<Box>();
-                clone.transform.position = node.WorldPosition;
+                clone.transform.localPosition = node.WorldPosition;
                 box.SetProperties(rp, node);
                 node.SetBox(box);
             }
