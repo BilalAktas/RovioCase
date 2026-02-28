@@ -7,7 +7,7 @@ namespace Core
     {
         [SerializeField] private AudioSource _audioSource;
         [SerializeField] private TrailRenderer _trail;
-        [SerializeField] private GameObject _particle;
+        
         
         public ProductGridNode CurrentNode { get; private set; }
         public BoxProperties Properties { get; private set; }
@@ -74,8 +74,9 @@ namespace Core
                     transform.localPosition = Vector3.zero;
                     transform.localRotation = Quaternion.identity;
 
-                    var clone = Instantiate(_particle);
+                    var clone = ObjectPool.Instance.GetFromPool("CubeCollectParticle");
                     clone.transform.position = transform.position;
+                    clone.SetActive(true);
             
                     clone.GetComponent<ParticleSystemRenderer>().material.color =
                         Properties.ColorMaterial.color;

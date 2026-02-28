@@ -11,10 +11,10 @@ namespace Core
         [SerializeField] private Vector2Int _gridSize;
         [SerializeField] private GameObject _nodePrefab;
         private Vector3 _bottomLeft;
-        [SerializeField] private GameObject _cubePrefab;
         [SerializeField] private BoxProperties[] _boxProperties;
         [Header("DepthColumn")] 
         private static Dictionary<ProductDepthDirection, List<ProductGridNode>> _depthColumns = new();
+        
         
         private void Start()
         {
@@ -31,18 +31,6 @@ namespace Core
 
         private void CreateGrid()
         {
-            BoxColor[,] design =
-            {
-                { BoxColor.Red,   BoxColor.Red,   BoxColor.Red,   BoxColor.Green, BoxColor.Green, BoxColor.Green, BoxColor.Blue,  BoxColor.Blue,  BoxColor.Blue },
-                { BoxColor.Red,   BoxColor.Red,   BoxColor.Red,   BoxColor.Green, BoxColor.Green, BoxColor.Green, BoxColor.Blue,  BoxColor.Blue,  BoxColor.Blue },
-                { BoxColor.Red,   BoxColor.Red,   BoxColor.Red,   BoxColor.Green, BoxColor.Green, BoxColor.Green, BoxColor.Green, BoxColor.Red,   BoxColor.Red  },
-                { BoxColor.Red,   BoxColor.Red,   BoxColor.Red,   BoxColor.Blue,  BoxColor.Blue,  BoxColor.Blue,  BoxColor.Green, BoxColor.Red,   BoxColor.Red  },
-                { BoxColor.Green, BoxColor.Green, BoxColor.Green, BoxColor.Blue,  BoxColor.Blue,  BoxColor.Blue,  BoxColor.Green, BoxColor.Red,   BoxColor.Red  },
-                { BoxColor.Green, BoxColor.Green, BoxColor.Green, BoxColor.Blue,  BoxColor.Blue,  BoxColor.Blue,  BoxColor.Red,   BoxColor.Red,   BoxColor.Red  },
-                { BoxColor.Green, BoxColor.Green, BoxColor.Green, BoxColor.Blue,  BoxColor.Blue,  BoxColor.Blue,  BoxColor.Red,   BoxColor.Red,   BoxColor.Red  },
-                { BoxColor.Green, BoxColor.Green, BoxColor.Green, BoxColor.Red,   BoxColor.Red,   BoxColor.Red,   BoxColor.Red,   BoxColor.Red,   BoxColor.Red  },
-                { BoxColor.Green, BoxColor.Green, BoxColor.Green, BoxColor.Red,   BoxColor.Red,   BoxColor.Red,   BoxColor.Red,   BoxColor.Red,   BoxColor.Red  },
-            };
             
             var origin = Vector2.zero;
             _grid = new ProductGridNode[_gridSize.x, _gridSize.y];
@@ -60,21 +48,27 @@ namespace Core
                     _grid[gridPosition.x, gridPosition.y] = node;
                     clone.transform.localPosition = worldPosition;
 
-                    var cubeClone = Instantiate(_cubePrefab, transform);
-                    var cube = cubeClone.GetComponent<Cube>();
-                    node.SetCube(cube);
-                    cubeClone.transform.localPosition = worldPosition;
-                    cubeClone.GetComponent<Cube>().SetNode(node);
-
-                    cubeClone.name = $"cube {cubeClone.transform.GetSiblingIndex()}";
-                    
-                    var c = design[x, y];
-                    foreach (var property in _boxProperties)
+                    var c = LevelManager.Instance.CurrentLevelDesignData.Get(x, y);
+                    if (c != BoxColor.Empty)
                     {
-                        if (property.BoxColor == c)
+                        var cubeClone = ObjectPool.Instance.GetFromPool("Cube");
+                        cubeClone.transform.SetParent(transform);
+                        cubeClone.SetActive(true);
+                        var cube = cubeClone.GetComponent<Cube>();
+                        node.SetCube(cube);
+                        cubeClone.transform.localPosition = worldPosition;
+                        cubeClone.GetComponent<Cube>().SetNode(node);
+
+                        cubeClone.name = $"cube {cubeClone.transform.GetSiblingIndex()}";
+                    
+                   
+                        foreach (var property in _boxProperties)
                         {
-                            cube.SetProperties(property);
-                            break;
+                            if (property.BoxColor == c)
+                            {
+                                cube.SetProperties(property);
+                                break;
+                            }
                         }
                     }
                 }

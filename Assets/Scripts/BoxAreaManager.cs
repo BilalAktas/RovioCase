@@ -16,8 +16,8 @@ namespace Core
         [Header("Box")] 
         [SerializeField] private BoxProperties[] _boxProperties;
         [SerializeField] private GameObject _boxPrefab;
-        [Header("Design")] 
-        [SerializeField] private BoxAreaDesign _design;
+        [SerializeField] private GameObject _obstaclePrefab;
+        
         
         private void Start()
         {
@@ -57,15 +57,28 @@ namespace Core
 
         private void SpawnBox()
         {
-            foreach (var design in _design.BoxAreaDesignStruct)
+            for (var x = 0; x < _gridSize.x; x++)
             {
-                var node = _grid[design.GridPosition.x, design.GridPosition.y];
-                var clone = Instantiate(_boxPrefab, transform);
-                var rp = _boxProperties.FirstOrDefault(x => x.BoxColor == design.BoxColor);
-                var box = clone.GetComponent<Box>();
-                clone.transform.localPosition = node.WorldPosition;
-                box.SetProperties(rp, node);
-                node.SetBox(box);
+                for (var y = 0; y < _gridSize.y; y++)
+                {
+                    var color = LevelManager.Instance.CurrentLevelDesignData.GetBox(x, y);
+                    var node = _grid[x, y];
+                    if (color == BoxColor.Empty)
+                    {
+                        node.SetObstacle();
+                        var obstacleClone = Instantiate(_obstaclePrefab, transform);
+                        obstacleClone.transform.localPosition = node.WorldPosition;
+                        
+                        continue;
+                    }
+                    
+                    var clone = Instantiate(_boxPrefab, transform);
+                    var rp = _boxProperties.FirstOrDefault(x => x.BoxColor == color);
+                    var box = clone.GetComponent<Box>();
+                    clone.transform.localPosition = node.WorldPosition;
+                    box.SetProperties(rp, node, LevelManager.Instance.CurrentLevelDesignData.GetBoxCapacity(x,y));
+                    node.SetBox(box);
+                }
             }
         }
 
@@ -106,6 +119,12 @@ namespace Core
                                 }
 
                                 if (_grid[s.x, s.y].CurrentBox)
+                                {
+                                    check = false;
+                                    continue;
+                                }
+                                
+                                if (_grid[s.x, s.y].IsObstacle)
                                 {
                                     check = false;
                                     continue;

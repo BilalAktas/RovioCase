@@ -4,7 +4,8 @@ namespace Core
     {
         Red,
         Blue,
-        Green
+        Green,
+        Empty
     }
     public enum ProductDepthDirection
     {

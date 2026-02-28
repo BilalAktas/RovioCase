@@ -7,11 +7,15 @@ namespace Core
         public Vector3 WorldPosition { get; set; }
         public Vector2Int GridPosition { get; set; }
         public Box CurrentBox { get; private set; }
+        
+        public bool IsObstacle { get; private set; }
 
         public void SetBox(Box box)
         {
             CurrentBox = box;
         }
+
+        public void SetObstacle() => IsObstacle = true;
 
         public BoxGridNode(Vector3 worldPosition, Vector2Int gridPosition)
         {

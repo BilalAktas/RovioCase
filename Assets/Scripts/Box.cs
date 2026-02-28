@@ -16,7 +16,9 @@ namespace Core
         [SerializeField] private Canvas _canvas;
         private RectTransform _rectTransform;
 
+        private int _maxCubeAmount;
         private int _cubeAmount;
+        private int _rCubeAmount;
         [SerializeField] private TextMeshProUGUI _cubeAmountText;
         
         [Header("MoveOnContainer")]
@@ -38,7 +40,9 @@ namespace Core
         private bool _filled;
         private bool _fillCalled;
 
-        public void SetProperties(BoxProperties properties, BoxGridNode node)
+
+
+        public void SetProperties(BoxProperties properties, BoxGridNode node, int maxCubeAmount)
         {
             _boxProperties = properties;
             _node = node;
@@ -53,6 +57,9 @@ namespace Core
 
             _canvas.worldCamera = Camera.main;
             _rectTransform = _canvas.GetComponent<RectTransform>();
+
+            _maxCubeAmount = maxCubeAmount;
+               _cubeAmountText.text = $"{_cubeAmount}/{_maxCubeAmount}";
         }
 
         private void ClearAllLockedColumns()
@@ -116,8 +123,6 @@ namespace Core
                     renderer.material = _boxProperties.ColorMaterial;
                 }
             }
-            // if (!gameStart) transform.DOScale(scale, .25f).SetEase(Ease.Linear);
-            // else transform.localScale = scale;
         }
 
         private void JumpOnContainer()
@@ -128,7 +133,7 @@ namespace Core
             transform.DOComplete();
 
             Vector3 pos = _splineContainer.EvaluatePosition(0f);
-            pos += Vector3.up * 2f;
+            pos += Vector3.up * .85f;
             var midPoint = (transform.position + pos) / 2f + Vector3.up * 5f;
 
             var poses = new List<Vector3>()
@@ -240,11 +245,17 @@ namespace Core
                                         if (cube.Properties.BoxColor != _boxProperties.BoxColor) return;
                                         
                                         //Debug.Log($"add locked {index} - {GetBoxDirection()} - {cube.name}");
+                                        _rCubeAmount++;
+                                        if (_rCubeAmount >= _maxCubeAmount)
+                                        {
+                                            _filled = true;    
+                                        }
+                                        
                                         _lockedColumns[GetBoxDirection()].Add(index);
                                         _lastCube.OnSelectedByBox(slot);
                                         _cubes[slot] = _lastCube;
                                         
-                                        CheckAllSlots();
+                                       
                                     }
 
                                     break;
@@ -255,24 +266,7 @@ namespace Core
                 }
             }
         }
-
-        private void CheckAllSlots()
-        {
-       
-            foreach (var slot in _cubeSlots)
-            {
-                if (_cubes[slot] == null)
-                {
-                    return;
-                }
-            }
-
-            _filled = true;
-            //_startedMoving = false;
-            //this.enabled = false;
-
-        }
-
+        
         private Sequence _collectSequence;
         private void OnCollectCube()
         {
@@ -310,9 +304,9 @@ namespace Core
         }
         public void CheckFill()
         {
-            OnCollectCube();
             _cubeAmount++;
-            _cubeAmountText.text = $"{_cubeAmount}/9";
+            _cubeAmountText.text = $"{_cubeAmount}/{_maxCubeAmount}";
+            OnCollectCube();
         }
 
         private ProductDepthDirection GetBoxDirection()

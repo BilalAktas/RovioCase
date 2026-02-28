@@ -6,7 +6,6 @@ namespace Core
     {
         [SerializeField] private GameObject _levelCompleted;
         [SerializeField] private GameObject _levelFailed;
-
         private int _boxAmount;
         
         private void Start()
@@ -24,8 +23,9 @@ namespace Core
         private void OnBoxFilled(OnBoxFilledEvent data)
         {
             _boxAmount++;
-            if (_boxAmount >= 9)
+            if (_boxAmount >= LevelManager.Instance.CurrentLevelDesignData.GetBoxAmount())
             {
+                SaveLoadManager.IncreaseLevel();
                 _levelCompleted.SetActive(true);
             }
         }
