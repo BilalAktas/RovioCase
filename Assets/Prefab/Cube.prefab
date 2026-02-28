@@ -258,7 +258,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Core.Cube
   _audioSource: {fileID: 8160382344562859398}
   _trail: {fileID: 2470346861743511553}
-  _particle: {fileID: 6168219347348108372, guid: 067903e8f53a78942b0670b4930ef173, type: 3}
 --- !u!1 &7549110063726282455
 GameObject:
   m_ObjectHideFlags: 0
