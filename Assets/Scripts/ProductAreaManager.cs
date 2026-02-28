@@ -5,46 +5,66 @@ namespace Core
 {
     public class ProductAreaManager : MonoBehaviour
     {
+        private LevelDesignData _currentLevelDesignData;
         [Header("Grid")]
         private ProductGridNode[,] _grid;
-        [SerializeField] private Vector2 _nodeSize;
-        [SerializeField] private Vector2Int _gridSize;
-        [SerializeField] private GameObject _nodePrefab;
+        private Vector2Int _gridSize;
         private Vector3 _bottomLeft;
-        [SerializeField] private BoxProperties[] _boxProperties;
         [Header("DepthColumn")] 
         private static Dictionary<ProductDepthDirection, List<ProductGridNode>> _depthColumns = new();
         
-        
-        private void Start()
+        private void Awake()
         {
-            CreateGrid();
-            CalculateDepth();
-            
+            EventBus.Subscribe<OnLevelSpawnedEvent>(OnLevelSpawned);
             EventBus.Subscribe<OnReCalculateDepthEvent>(OnReCalculateDepth);
         }
 
         private void OnDestroy()
         {
+            EventBus.Unsubscribe<OnLevelSpawnedEvent>(OnLevelSpawned);
             EventBus.Unsubscribe<OnReCalculateDepthEvent>(OnReCalculateDepth);
+        }
+
+        private void OnLevelSpawned(OnLevelSpawnedEvent data)
+        {
+            if (_grid != null)
+            {
+                for (var x = 0; x < _gridSize.x; x++)
+                {
+                    for (var y = 0; y < _gridSize.y; y++)
+                    {
+                        var node = _grid[x, y];
+                        if (node != null && node.CurrentCube != null)
+                        {
+                            ObjectPool.Instance.Deposit(node.Visual, "ProductNodePrefab");
+                            ObjectPool.Instance.Deposit(node.CurrentCube.gameObject, "Cube");
+                        }
+                    }
+                }
+            }
+            _currentLevelDesignData = LevelManager.Instance.CurrentLevelDesignData;
+            _gridSize = new Vector2Int(_currentLevelDesignData.ProductGridWidth, _currentLevelDesignData.ProductGridHeight);
+            CreateGrid();
+            CalculateDepth();
         }
 
         private void CreateGrid()
         {
-            
             var origin = Vector2.zero;
             _grid = new ProductGridNode[_gridSize.x, _gridSize.y];
-            var totalSize = new Vector2(_gridSize.x * _nodeSize.x, _gridSize.y * _nodeSize.y);
-            _bottomLeft = origin - totalSize / 2 + _nodeSize / 2;
+            var totalSize = new Vector2(_gridSize.x * _currentLevelDesignData.ProductNodeSize.x, _gridSize.y * _currentLevelDesignData.ProductNodeSize.y);
+            _bottomLeft = origin - totalSize / 2 + _currentLevelDesignData.ProductNodeSize / 2;
             for (var x = 0; x < _gridSize.x; x++)
             {
                 for (var y = 0; y < _gridSize.y; y++)
                 {
-                    var worldPosition = _bottomLeft + new Vector3(x * _nodeSize.x, 0, y * _nodeSize.y);
+                    var worldPosition = _bottomLeft + new Vector3(x * _currentLevelDesignData.ProductNodeSize.x, 0, y * _currentLevelDesignData.ProductNodeSize.y);
                     worldPosition.y = 0;
                     var gridPosition = new Vector2Int(x, y);
-                    var clone = Instantiate(_nodePrefab, transform);
-                    var node = new ProductGridNode(worldPosition, gridPosition);
+                    var clone = ObjectPool.Instance.GetFromPool("ProductNodePrefab");
+                    clone.transform.SetParent(transform);
+                    clone.SetActive(true);
+                    var node = new ProductGridNode(worldPosition, gridPosition, clone);
                     _grid[gridPosition.x, gridPosition.y] = node;
                     clone.transform.localPosition = worldPosition;
 
@@ -62,7 +82,7 @@ namespace Core
                         cubeClone.name = $"cube {cubeClone.transform.GetSiblingIndex()}";
                     
                    
-                        foreach (var property in _boxProperties)
+                        foreach (var property in _currentLevelDesignData.BoxProperties)
                         {
                             if (property.BoxColor == c)
                             {

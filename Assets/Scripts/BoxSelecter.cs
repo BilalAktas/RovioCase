@@ -9,18 +9,20 @@ namespace Core
 
         private void Update()
         {
-            // if(Input.GetMouseButtonDown(0))
-            //     HandleStartDrag(Input.mousePosition);
+            if (GameManager.GameState == GameState.Idle) return;
             
-            if (Input.touchCount <= 0) return;
+            if(Input.GetMouseButtonDown(0))
+                HandleStartDrag(Input.mousePosition);
             
-            var input = Input.GetTouch(0);
-            switch (input.phase)
-            {
-                case TouchPhase.Began:
-                    HandleStartDrag(input.position);
-                    break;
-            }
+            // if (Input.touchCount <= 0) return;
+            //
+            // var input = Input.GetTouch(0);
+            // switch (input.phase)
+            // {
+            //     case TouchPhase.Began:
+            //         HandleStartDrag(input.position);
+            //         break;
+            // }
         }
    
         private void HandleStartDrag(Vector3 pos)

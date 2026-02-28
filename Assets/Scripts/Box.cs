@@ -9,6 +9,7 @@ namespace Core
     public class Box : MonoBehaviour, IClickable
     {
         [SerializeField] private AudioSource _pickSource;
+        [SerializeField] private AudioSource _filledSource;
         
         private BoxProperties _boxProperties;
         private BoxGridNode _node;
@@ -39,7 +40,7 @@ namespace Core
 
         private bool _filled;
         private bool _fillCalled;
-
+        private Sequence _collectSequence;
 
 
         public void SetProperties(BoxProperties properties, BoxGridNode node, int maxCubeAmount)
@@ -60,6 +61,35 @@ namespace Core
 
             _maxCubeAmount = maxCubeAmount;
                _cubeAmountText.text = $"{_cubeAmount}/{_maxCubeAmount}";
+               
+            EventBus.Subscribe<OnLevelSpawnedEvent>(OnLevelSpawned);
+
+            transform.DOComplete();
+            transform.localScale = Vector3.one;
+        }
+
+        private void OnDestroy()
+        {
+            EventBus.Unsubscribe<OnLevelSpawnedEvent>(OnLevelSpawned);
+        }
+
+        private void OnLevelSpawned(OnLevelSpawnedEvent data)
+        {
+            _cubeAmount = 0;
+            _rCubeAmount = 0;
+            _timer = 0;
+            _filled = false;
+            _fillCalled = false;
+            _collectSequence.Complete();
+            foreach (var slot in _cubeSlots)
+            {
+                var c = _cubes[slot];
+                if (c)
+                {
+                    _cubes[slot] = null;
+                    Destroy(c.gameObject);    
+                }
+            }
         }
 
         private void ClearAllLockedColumns()
@@ -93,6 +123,7 @@ namespace Core
         public void SetClickableStatus(bool state, bool gameStart)
         {
             _clickableStatus = state;
+            
             if (!state)
             {
                 var c = _cubeAmountText.color;
@@ -104,7 +135,7 @@ namespace Core
                     renderer.material = _boxProperties.ColorMaterial;
                     
                     Color.RGBToHSV(renderer.material.color, out float h, out float s, out float v);
-                    v -= .5f;
+                    v -= .75f;
                     v = Mathf.Clamp01(v);
 
                     var co = Color.HSVToRGB(h, s, v);
@@ -152,6 +183,7 @@ namespace Core
 
         private void Update()
         {
+            if (GameManager.GameState == GameState.Idle) return;
             if (!_startedMoving) return;
 
             Move();
@@ -267,7 +299,7 @@ namespace Core
             }
         }
         
-        private Sequence _collectSequence;
+        
         private void OnCollectCube()
         {
             //transform.DOComplete();
@@ -285,20 +317,35 @@ namespace Core
                 if (!_filled) return;
                 if (_fillCalled) return;
 
+                _filledSource.Play();
+                
                 _fillCalled = true;
                 transform.DOComplete();
-            
-            
-                transform.DORotate(Vector3.one, .5f, RotateMode.FastBeyond360).SetEase(Ease.Linear);
-                // transform.DOMove(transform.position + Vector3.up * 2f, .5f).OnComplete(() =>
-                // {
-                // });
-                transform.DOScale(Vector3.zero, .5f).OnComplete(() =>
+
+                DOVirtual.DelayedCall(.1f, () =>
                 {
-                    _startedMoving = false;
-                    this.enabled = false;
-                    EventBus.Raise(new OnBoxFilledEvent());
-                });   
+                    var sequence = DOTween.Sequence();
+                
+                    sequence.Append(transform.GetChild(0).DOScale(new Vector3(1.5f, 1.5f, 1.5f), .2f)
+                        .SetEase(Ease.Linear));
+            
+                    // sequence.Append(transform.GetChild(0).DOScale(Vector3.one, 0.3f)
+                    //     .SetEase(Ease.OutElastic));
+
+                    sequence.Append(
+                        transform.GetChild(0).DORotate(new Vector3(0, 360f * 3, 0), 0.5f, RotateMode.FastBeyond360)
+                            .SetEase(Ease.InOutSine)
+                    );
+
+                    sequence.Append(transform.DOScale(Vector3.zero, .5f)).SetEase(Ease.Linear);
+                    //
+                    sequence.OnComplete(() =>
+                    {
+                        _startedMoving = false;
+                        this.enabled = false;
+                        EventBus.Raise(new OnBoxFilledEvent());
+                    });
+                });
             });
 
         }

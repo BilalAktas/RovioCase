@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,18 +19,49 @@ namespace Core
         private int _selectedBoxX = -1;
         private int _selectedBoxY = -1;
 
+        private SerializedProperty _boxNodeSize;
+        private SerializedProperty _boxNodePrefab;
+        private SerializedProperty _boxWorldPositionOffset;
+        private SerializedProperty _boxProperties;
+        private SerializedProperty _boxPrefab;
+        private SerializedProperty _boxObstaclePrefab;
+        private SerializedProperty _productNodeSize;
+
+        private void OnEnable()
+        {
+            _boxNodeSize = serializedObject.FindProperty("_boxNodeSize");
+            _boxNodePrefab = serializedObject.FindProperty("_boxNodePrefab");
+            _boxWorldPositionOffset = serializedObject.FindProperty("_boxWorldPositionOffset");
+            _boxProperties = serializedObject.FindProperty("_boxProperties");
+            _boxPrefab = serializedObject.FindProperty("_boxPrefab");
+            _boxObstaclePrefab = serializedObject.FindProperty("_boxObstaclePrefab");
+            _productNodeSize = serializedObject.FindProperty("_productNodeSize");
+        }
         public override void OnInspectorGUI()
         {
             var data = (LevelDesignData)target;
             
-            var newWidth = Mathf.Max(1, EditorGUILayout.IntField("Width", data.Width));
-            var newHeight = Mathf.Max(1, EditorGUILayout.IntField("Height", data.Height));
+            var newWidth = Mathf.Max(1, EditorGUILayout.IntField("ProductGridWidth", data.ProductGridWidth));
+            var newHeight = Mathf.Max(1, EditorGUILayout.IntField("ProductGridHeight", data.ProductGridHeight));
 
-            if (newWidth != data.Width || newHeight != data.Height)
+            serializedObject.Update();
+
+            EditorGUILayout.PropertyField(_boxNodeSize);
+            EditorGUILayout.PropertyField(_boxNodePrefab);
+            EditorGUILayout.PropertyField(_boxWorldPositionOffset);
+            EditorGUILayout.PropertyField(_boxProperties, true);
+            EditorGUILayout.PropertyField(_boxPrefab);
+            EditorGUILayout.PropertyField(_boxObstaclePrefab);
+            EditorGUILayout.PropertyField(_productNodeSize);
+
+            serializedObject.ApplyModifiedProperties();
+
+            if (newWidth != data.ProductGridWidth || newHeight != data.ProductGridHeight)
             {
                 Undo.RecordObject(data, "Resize Main Grid");
-                data.Width = newWidth;
-                data.Height = newHeight;
+                data.ProductGridWidth = newWidth;
+                data.ProductGridHeight = newHeight;
+                
                 data.EnsureSize();
                 EditorUtility.SetDirty(data);
             }
@@ -89,12 +121,12 @@ namespace Core
         
         private static void DrawGridMain(LevelDesignData data)
         {
-            for (var y = data.Height - 1; y >= 0; y--)
+            for (var y = data.ProductGridHeight - 1; y >= 0; y--)
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     GUILayout.Space(2);
-                    for (var x = 0; x < data.Width; x++)
+                    for (var x = 0; x < data.ProductGridWidth; x++)
                     {
                         var current = data.Get(x, y);
                         DrawCell(() =>

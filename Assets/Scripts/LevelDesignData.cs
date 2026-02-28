@@ -1,27 +1,40 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Core
 {
     [CreateAssetMenu(fileName = "LevelDesignData", menuName = "ScriptableObjects/Level Design Data")]
     public class LevelDesignData : ScriptableObject
     {
-        [Header("Main Grid (Cells)")]
-        [Min(1)] public int Width = 9;
-        [Min(1)] public int Height = 9;
-
-        [SerializeField] private BoxColor[] _cells;
-
-        [Header("Box Grid (3x3)")]
+        [Header("Product)")] 
+        [Min(1)] public int ProductGridWidth = 9;
+        [Min(1)] public int ProductGridHeight = 9;
+        [SerializeField] private Vector2 _productNodeSize;
+        public Vector2 ProductNodeSize => _productNodeSize;
+        [Header("Box")]
         public const int BoxWidth = 3;
         public const int BoxHeight = 3;
-
+        [SerializeField] private Vector2Int _boxNodeSize;
+        [SerializeField] private GameObject _boxNodePrefab;
+        [SerializeField] private Vector3 _boxWorldPositionOffset;
+        [SerializeField] private BoxProperties[] _boxProperties;
+        [SerializeField] private GameObject _boxPrefab;
+        [SerializeField] private GameObject _boxObstaclePrefab;
+        public Vector2Int BoxNodeSize => _boxNodeSize;
+        public GameObject NodePrefab => _boxNodePrefab;
+        public Vector3 WorldPositionOffet => _boxWorldPositionOffset;
+        public BoxProperties[] BoxProperties => _boxProperties;
+        public GameObject BoxPrefab => _boxPrefab;
+        public GameObject ObstaclePrefab => _boxObstaclePrefab;
+        public Vector2Int BoxGridSize => new Vector2Int(BoxWidth, BoxHeight);
         [SerializeField] private BoxColor[] _boxCells;
         [SerializeField] private int[] _boxCaps;
+        [SerializeField] private BoxColor[] _cells;
 
         public void EnsureSize()
         {
-            var size = Width * Height;
+            var size = ProductGridWidth * ProductGridHeight;
             if (_cells == null || _cells.Length != size)
             {
                 var newCells = new BoxColor[size];
@@ -51,13 +64,13 @@ namespace Core
         public BoxColor Get(int x, int y)
         {
             EnsureSize();
-            return _cells[y * Width + x];
+            return _cells[y * ProductGridWidth + x];
         }
 
         public void Set(int x, int y, BoxColor value)
         {
             EnsureSize();
-            _cells[y * Width + x] = value;
+            _cells[y * ProductGridWidth + x] = value;
         }
 
         public void Fill(BoxColor value)
