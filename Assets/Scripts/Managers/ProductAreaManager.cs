@@ -53,53 +53,52 @@ namespace Core
 
         private void CreateGrid()
         {
-            var origin = Vector2.zero;
-            _grid = new ProductGridNode[_gridSize.x, _gridSize.y];
-            var totalSize = new Vector2(_gridSize.x * _currentLevelDesignData.ProductNodeSize.x, _gridSize.y * _currentLevelDesignData.ProductNodeSize.y);
-            _bottomLeft = origin - totalSize / 2 + _currentLevelDesignData.ProductNodeSize / 2;
-            for (var x = 0; x < _gridSize.x; x++)
-            {
-                for (var y = 0; y < _gridSize.y; y++)
+            _grid = Helpers.CreateGrid(
+                _gridSize,
+                origin: Vector3.zero,
+                nodeSize: _currentLevelDesignData.ProductNodeSize,
+                worldOffset: Vector3.zero,
+                createNode: (worldPos, gridPos) =>
                 {
-                    var worldPosition = _bottomLeft + new Vector3(x * _currentLevelDesignData.ProductNodeSize.x, 0, y * _currentLevelDesignData.ProductNodeSize.y);
-                    worldPosition.y = 0;
-                    var gridPosition = new Vector2Int(x, y);
                     var clone = ObjectPool.Instance.GetFromPool("ProductNodePrefab");
                     clone.transform.SetParent(transform);
                     clone.SetActive(true);
-                    var node = new ProductGridNode(worldPosition, gridPosition, clone);
-                    _grid[gridPosition.x, gridPosition.y] = node;
-                    clone.transform.localPosition = worldPosition;
+                    clone.transform.localPosition = worldPos;
 
-                    var c = LevelManager.Instance.CurrentLevelDesignData.Get(x, y);
-                    if (c != BoxColor.Empty)
-                    {
-                        var cubeClone = ObjectPool.Instance.GetFromPool("Cube");
-                        cubeClone.transform.SetParent(transform);
-                        cubeClone.SetActive(true);
-                        var cube = cubeClone.GetComponent<Cube>();
-                        cube.enabled = true;
-                        node.SetCube(cube);
-                        cubeClone.transform.localPosition = worldPosition;
-                        cubeClone.GetComponent<Cube>().SetNode(node);
-
-                        cubeClone.name = $"cube {cubeClone.transform.GetSiblingIndex()}";
+                    return new ProductGridNode(worldPos, gridPos, clone);
+                },
+                afterCreate: (node, worldPos, gridPos) =>
+                {
+                    worldPos.y = 0;
                     
-                   
-                        foreach (var property in _currentLevelDesignData.ColorProperties)
+                    var c = LevelManager.Instance.CurrentLevelDesignData.Get(gridPos.x, gridPos.y);
+                    if (c == BoxColor.Empty) return;
+
+                    var cubeClone = ObjectPool.Instance.GetFromPool("Cube");
+                    cubeClone.transform.SetParent(transform);
+                    cubeClone.SetActive(true);
+                    cubeClone.transform.localPosition = worldPos;
+
+                    var cube = cubeClone.GetComponent<Cube>();
+                    cube.enabled = true;
+
+                    node.SetCube(cube);
+                    cube.SetNode(node);
+                    
+                    foreach (var property in _currentLevelDesignData.ColorProperties)
+                    {
+                        if (property.BoxColor == c)
                         {
-                            if (property.BoxColor == c)
-                            {
-                                cube.SetProperties(property);
-                                break;
-                            }
+                            cube.SetProperties(property);
+                            break;
                         }
-                        
-                        _spawnedCubes.Add(cube);
                     }
+
+                    _spawnedCubes.Add(cube);
                 }
-            }
+            );
         }
+
         
 
         private void OnReCalculateDepth(OnReCalculateDepthEvent data)

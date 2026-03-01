@@ -32,6 +32,14 @@ namespace Core
         [SerializeField] private int[] _boxCaps;
         [SerializeField] private BoxColor[] _cells;
 
+        public ColorProperties GetBoxPropertyByColor(BoxColor color)
+        {
+            foreach (var property in ColorProperties)
+                if (property.BoxColor == color) return property;
+
+            return null;
+        }
+        
         public void EnsureSize()
         {
             var size = ProductGridWidth * ProductGridHeight;

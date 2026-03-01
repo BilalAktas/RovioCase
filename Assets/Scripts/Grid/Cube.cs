@@ -11,14 +11,17 @@ namespace Core
         
         [SerializeField] private TrailRenderer _trail;
         private Vector3 _defaultScale;
-        private MaterialPropertyBlock _trailPropertyBlock;
+        private MaterialPropertyBlock _propertyBlock;
         private static readonly int _baseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int _albedoColorId = Shader.PropertyToID("_AlbedoColor");
 
         private Collider _collider;
+        private MeshRenderer _renderer;
 
         private void Awake()
         {
             _collider = GetComponent<Collider>();
+            _renderer = GetComponent<MeshRenderer>();
             _defaultScale = transform.localScale;
         }
 
@@ -29,15 +32,19 @@ namespace Core
             transform.rotation = Quaternion.identity;
             
             Properties = properties;
+
+            _propertyBlock = new MaterialPropertyBlock();
+            _renderer.GetPropertyBlock(_propertyBlock);
+            _propertyBlock.SetColor(_albedoColorId, Properties.CubeColorMaterialColor);
+            _renderer.SetPropertyBlock(_propertyBlock);
             
-            GetComponent<MeshRenderer>().sharedMaterial = Properties.CubeColorMaterial;
-            var newColor = Helpers.AdjustBrightness(Properties.CubeColorMaterial.color, .25f);
-            newColor.a = 1f;
+             var newColor = Helpers.AdjustBrightness(Properties.CubeColorMaterialColor, .25f);
+             newColor.a = 1f;
             
-            _trailPropertyBlock = new MaterialPropertyBlock();
-            _trail.GetPropertyBlock(_trailPropertyBlock);
-            _trailPropertyBlock.SetColor(_baseColorId, newColor);
-            _trail.SetPropertyBlock(_trailPropertyBlock);
+             _propertyBlock = new MaterialPropertyBlock();
+            _trail.GetPropertyBlock(_propertyBlock);
+            _propertyBlock.SetColor(_baseColorId, newColor);
+            _trail.SetPropertyBlock(_propertyBlock);
             
             _trail.emitting = false;
  
@@ -92,7 +99,7 @@ namespace Core
                     if (clone.TryGetComponent(out PooledParticle particle))
                     {
                         clone.SetActive(true);
-                        particle.PlayAt(transform.position,  Properties.CubeColorMaterial.color);
+                        particle.PlayAt(transform.position,  Properties.CubeColorMaterialColor);
                     }
                     
                     _trail.emitting = false;

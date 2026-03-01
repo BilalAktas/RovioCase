@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
@@ -40,13 +41,25 @@ namespace Core
         private Sequence _collectSequence;
         private Camera _cam;
         private ProductDepthDirection _currentDir;
+        
+        private void Awake()
+        {
+            _renderers = GetComponentsInChildren<Renderer>();
+        }
 
         public void SetProperties(ColorProperties properties, BoxGridNode node, int maxCubeAmount)
         {
             _colorProperties = properties;
             _node = node;
-            foreach (var renderer in GetComponentsInChildren<Renderer>())
-                renderer.sharedMaterial = _colorProperties.BoxColorMaterial;
+
+            _propertyBlock = new MaterialPropertyBlock();
+
+            foreach (var renderer in _renderers)
+            {
+                renderer.GetPropertyBlock(_propertyBlock);
+                _propertyBlock.SetColor(_baseColorId, _colorProperties.BoxColorMaterialColor);
+                renderer.SetPropertyBlock(_propertyBlock);
+            }
             
             _splineContainer = FindFirstObjectByType<SplineContainer>();
             ClearAllLockedColumns();
@@ -62,8 +75,6 @@ namespace Core
 
             transform.DOComplete();
             transform.localScale = Vector3.one;
-
-            _renderers = GetComponentsInChildren<Renderer>();
         }
 
         private void OnDestroy()
@@ -122,7 +133,7 @@ namespace Core
                 
                 foreach (var renderer in _renderers)
                 {
-                    var newColor = Helpers.AdjustBrightness(_colorProperties.BoxColorMaterial.color, _colorProperties.AdjustBrightness);
+                    var newColor = Helpers.AdjustBrightness(_colorProperties.BoxColorMaterialColor, _colorProperties.AdjustBrightness);
                     newColor.a = 1f;
                     
                     renderer.GetPropertyBlock(_propertyBlock);
@@ -138,7 +149,7 @@ namespace Core
                 
                 foreach (var renderer in _renderers)
                 {
-                    var newColor = Helpers.AdjustBrightness(_colorProperties.BoxColorMaterial.color, 0);
+                    var newColor = Helpers.AdjustBrightness(_colorProperties.BoxColorMaterialColor, 0);
                     newColor.a = 1f;
                     
                     renderer.GetPropertyBlock(_propertyBlock);
@@ -222,7 +233,7 @@ namespace Core
                     {
                         Box = this
                     };
-                    EventBus.Raise(e);    
+                    EventBus.Raise(e);
                 }
             }
         }
@@ -232,7 +243,7 @@ namespace Core
             if (_filled) return;
             var currentDir = GetBoxDirection();
             
-            if (Physics.Raycast(transform.position, transform.right, out var hit, _boxProperties.CubeLayer))
+            if (Physics.Raycast(transform.position, transform.right, out var hit, Mathf.Infinity,_boxProperties.CubeLayer))
             {
                 if (hit.transform.TryGetComponent(out Cube cube))
                 {
@@ -284,7 +295,7 @@ namespace Core
             _collectSequence.Complete();
             _collectSequence = DOTween.Sequence();
 
-            _collectSequence.Append(transform.GetChild(0).DOScale(new Vector3(1.15f, 0.65f, 1.1f), 0.08f)
+            _collectSequence.Append(transform.GetChild(0).DOScale(new Vector3(1.15f, 1f, 1.1f), 0.08f)
                 .SetEase(Ease.OutQuad));
             
             _collectSequence.Append(transform.GetChild(0).DOScale(Vector3.one, 0.3f)

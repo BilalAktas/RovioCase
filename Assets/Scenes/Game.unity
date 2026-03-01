@@ -367,6 +367,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 892fe6d8256ade34daeceede97d9d277, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoxSelecter
+  _coolDown: 0.25
 --- !u!1001 &321268150
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3399,6 +3400,10 @@ MonoBehaviour:
   _levelText: {fileID: 351670228}
   _levelDesignDatas:
   - {fileID: 11400000, guid: d8cf11a7d159c62459e387dc84914a57, type: 2}
+  - {fileID: 11400000, guid: 9dfd91fa46e31234e901af35f03d971c, type: 2}
+  - {fileID: 11400000, guid: 1db76fa95bca87c4db3251ee19be3539, type: 2}
+  - {fileID: 11400000, guid: 11e6d03e5504c8d43ae9ba1dd8588711, type: 2}
+  - {fileID: 11400000, guid: 549dcb20bc23a5646853b80a371af4d9, type: 2}
   _nextButton: {fileID: 1997964941}
   _retryButton: {fileID: 420199791}
 --- !u!4 &1443406417
