@@ -13,4 +13,6 @@ MonoBehaviour:
   m_Name: SO_RedBox
   m_EditorClassIdentifier: Assembly-CSharp::BoxProperties
   _boxColor: 0
-  _colorMaterial: {fileID: 2100000, guid: ec9780fb141dab546bdbc39441dba416, type: 2}
+  _boxColorMaterial: {fileID: 2100000, guid: ec9780fb141dab546bdbc39441dba416, type: 2}
+  _cubeColorMaterial: {fileID: 2100000, guid: a7b6e1c0c4ccdc04992afcce10170cdf, type: 2}
+  _adjustBrightness: -0.5

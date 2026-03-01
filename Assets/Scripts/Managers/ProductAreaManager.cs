@@ -12,6 +12,7 @@ namespace Core
         private Vector3 _bottomLeft;
         [Header("DepthColumn")] 
         private static Dictionary<ProductDepthDirection, List<ProductGridNode>> _depthColumns = new();
+        private readonly List<Cube> _spawnedCubes = new();
         
         private void Awake()
         {
@@ -34,14 +35,16 @@ namespace Core
                     for (var y = 0; y < _gridSize.y; y++)
                     {
                         var node = _grid[x, y];
-                        if (node != null && node.CurrentCube != null)
-                        {
-                            ObjectPool.Instance.Deposit(node.Visual, "ProductNodePrefab");
-                            ObjectPool.Instance.Deposit(node.CurrentCube.gameObject, "Cube");
-                        }
+                        ObjectPool.Instance.Deposit(node.Visual, "ProductNodePrefab");
                     }
                 }
             }
+
+            foreach (var cube in _spawnedCubes)
+                ObjectPool.Instance.Deposit(cube.gameObject, "Cube");
+
+            _spawnedCubes.Clear();
+            
             _currentLevelDesignData = LevelManager.Instance.CurrentLevelDesignData;
             _gridSize = new Vector2Int(_currentLevelDesignData.ProductGridWidth, _currentLevelDesignData.ProductGridHeight);
             CreateGrid();
@@ -75,6 +78,7 @@ namespace Core
                         cubeClone.transform.SetParent(transform);
                         cubeClone.SetActive(true);
                         var cube = cubeClone.GetComponent<Cube>();
+                        cube.enabled = true;
                         node.SetCube(cube);
                         cubeClone.transform.localPosition = worldPosition;
                         cubeClone.GetComponent<Cube>().SetNode(node);
@@ -90,6 +94,8 @@ namespace Core
                                 break;
                             }
                         }
+                        
+                        _spawnedCubes.Add(cube);
                     }
                 }
             }

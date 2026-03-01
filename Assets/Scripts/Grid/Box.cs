@@ -17,7 +17,7 @@ namespace Core
         [SerializeField] private BoxProperties _boxProperties;
         private ColorProperties _colorProperties;
         private MaterialPropertyBlock _propertyBlock;
-        private static readonly int _baseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int _baseColorId = Shader.PropertyToID("_AlbedoColor");
         private Renderer[] _renderers;
         [Header("CollectCube")]
         [SerializeField] private TextMeshProUGUI _cubeAmountText;
@@ -35,7 +35,6 @@ namespace Core
         private float _cooldown;
         private Cube _lastCube;
         private Dictionary<ProductDepthDirection, HashSet<int>> _lockedColumns = new();
-        private List<Cube> _collectedCubes = new();
         private bool _filled;
         private bool _fillCalled;
         private Sequence _collectSequence;
@@ -47,7 +46,7 @@ namespace Core
             _colorProperties = properties;
             _node = node;
             foreach (var renderer in GetComponentsInChildren<Renderer>())
-                renderer.sharedMaterial = _colorProperties.ColorMaterial;
+                renderer.sharedMaterial = _colorProperties.BoxColorMaterial;
             
             _splineContainer = FindFirstObjectByType<SplineContainer>();
             ClearAllLockedColumns();
@@ -80,10 +79,6 @@ namespace Core
             _filled = false;
             _fillCalled = false;
             _collectSequence.Complete();
-            foreach (var cube in _collectedCubes.ToArray())
-                ObjectPool.Instance.Deposit(cube.gameObject, "Cube");
-            
-            _collectedCubes.Clear();
         }
 
         private void ClearAllLockedColumns()
@@ -127,7 +122,7 @@ namespace Core
                 
                 foreach (var renderer in _renderers)
                 {
-                    var newColor = Helpers.AdjustBrightness(_colorProperties.ColorMaterial.color, -.75f);
+                    var newColor = Helpers.AdjustBrightness(_colorProperties.BoxColorMaterial.color, _colorProperties.AdjustBrightness);
                     newColor.a = 1f;
                     
                     renderer.GetPropertyBlock(_propertyBlock);
@@ -143,7 +138,7 @@ namespace Core
                 
                 foreach (var renderer in _renderers)
                 {
-                    var newColor = Helpers.AdjustBrightness(_colorProperties.ColorMaterial.color, 0);
+                    var newColor = Helpers.AdjustBrightness(_colorProperties.BoxColorMaterial.color, 0);
                     newColor.a = 1f;
                     
                     renderer.GetPropertyBlock(_propertyBlock);
@@ -274,8 +269,6 @@ namespace Core
                                         
                                 _lockedColumns[currentDir].Add(index);
                                 _lastCube.OnSelectedByBox(transform);
-                                _collectedCubes.Add(cube);
-                                        
                                        
                             }
                         }
@@ -340,14 +333,14 @@ namespace Core
             _cubeAmount++;
 
             var i = _cubeAmount - 1;
-            var layer = i / (7 * 5);
-            var indexInLayer = i % (7 * 5);
-            var zIndex = indexInLayer / 7;
-            var xIndex = indexInLayer % 7;
+            var layer = i / (5 * 5);
+            var indexInLayer = i % (5 * 5);
+            var zIndex = indexInLayer / 5;
+            var xIndex = indexInLayer % 5;
 
-            var newPos = new Vector3(-1.3f, -.5f, 1f) + new Vector3(
+            var newPos = new Vector3(-.8f, -.5f, 1f) + new Vector3(
                 xIndex * .4f,
-                layer * .5f,
+                layer * .65f,
                 zIndex * -.5f
             );
 
@@ -382,7 +375,7 @@ namespace Core
             var poses = new List<Vector3>()
             {
                 midPoint,
-                area.Visual.transform.position + Vector3.up * 1.5f
+                area.Visual.transform.position + Vector3.up * 1f
             };
 
             transform.DOPath(poses.ToArray(), .5f, PathType.CatmullRom).SetEase(Ease.InOutSine).OnComplete(() =>

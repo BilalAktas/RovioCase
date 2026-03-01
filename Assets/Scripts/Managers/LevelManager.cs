@@ -14,7 +14,7 @@ namespace Core
         
         [SerializeField] private Button _nextButton;
         [SerializeField] private Button _retryButton;
-
+        
         private void Start()
         {
             SpawnLevel();

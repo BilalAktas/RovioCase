@@ -13,4 +13,6 @@ MonoBehaviour:
   m_Name: SO_BlueBox
   m_EditorClassIdentifier: Assembly-CSharp::BoxProperties
   _boxColor: 1
-  _colorMaterial: {fileID: 2100000, guid: 19fcffeac7645fb48baf49a3c71fbf40, type: 2}
+  _boxColorMaterial: {fileID: 2100000, guid: 19fcffeac7645fb48baf49a3c71fbf40, type: 2}
+  _cubeColorMaterial: {fileID: 2100000, guid: 684be5efea0ac974085ec5474f5eaf99, type: 2}
+  _adjustBrightness: -0.6

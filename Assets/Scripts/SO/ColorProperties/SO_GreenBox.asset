@@ -13,4 +13,6 @@ MonoBehaviour:
   m_Name: SO_GreenBox
   m_EditorClassIdentifier: Assembly-CSharp::BoxProperties
   _boxColor: 2
-  _colorMaterial: {fileID: 2100000, guid: 3423955d2c4ed494f987b6189f558b45, type: 2}
+  _boxColorMaterial: {fileID: 2100000, guid: 3423955d2c4ed494f987b6189f558b45, type: 2}
+  _cubeColorMaterial: {fileID: 2100000, guid: 2b32b5b41c2b89e439a58d6505480d21, type: 2}
+  _adjustBrightness: -0.5

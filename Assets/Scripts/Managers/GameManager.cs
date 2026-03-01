@@ -1,3 +1,4 @@
+using DG.Tweening;
 using UnityEngine;
 
 namespace Core
@@ -17,6 +18,8 @@ namespace Core
         
         private void Start()
         {
+            //Application.targetFrameRate = 60; // TEST BUILD.
+            
             EventBus.Subscribe<OnLevelSpawnedEvent>(OnLevelSpawned);
             EventBus.Subscribe<OnLevelFailedEvent>(OnLevelFail);
             EventBus.Subscribe<OnBoxFilledEvent>(OnBoxFilled);
@@ -44,6 +47,7 @@ namespace Core
             _boxAmount++;
             if (_boxAmount >= LevelManager.Instance.CurrentLevelDesignData.GetBoxAmount())
             {
+                DOTween.CompleteAll();
                 SaveLoadManager.IncreaseLevel();
                 GameState = GameState.Idle;
                 _levelCompleted.SetActive(true);
@@ -53,7 +57,8 @@ namespace Core
         private void OnLevelFail(OnLevelFailedEvent data)
         {
             if (GameState == GameState.Idle) return;
-            
+
+            DOTween.CompleteAll();
             GameState = GameState.Idle;
             _levelFailed.SetActive(true);
         }

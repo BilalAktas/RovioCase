@@ -1,3 +1,4 @@
+using System;
 using DG.Tweening;
 using UnityEngine;
 
@@ -12,13 +13,25 @@ namespace Core
         private Vector3 _defaultScale;
         private MaterialPropertyBlock _trailPropertyBlock;
         private static readonly int _baseColorId = Shader.PropertyToID("_BaseColor");
-        
+
+        private Collider _collider;
+
+        private void Awake()
+        {
+            _collider = GetComponent<Collider>();
+            _defaultScale = transform.localScale;
+        }
+
         public void SetProperties(ColorProperties properties)
         {
+            _collider.enabled = true;
+            transform.localScale = _defaultScale;
+            transform.rotation = Quaternion.identity;
+            
             Properties = properties;
             
-            GetComponent<MeshRenderer>().sharedMaterial = Properties.ColorMaterial;
-            var newColor = Helpers.AdjustBrightness(Properties.ColorMaterial.color, .25f);
+            GetComponent<MeshRenderer>().sharedMaterial = Properties.CubeColorMaterial;
+            var newColor = Helpers.AdjustBrightness(Properties.CubeColorMaterial.color, .25f);
             newColor.a = 1f;
             
             _trailPropertyBlock = new MaterialPropertyBlock();
@@ -27,7 +40,7 @@ namespace Core
             _trail.SetPropertyBlock(_trailPropertyBlock);
             
             _trail.emitting = false;
-            _defaultScale = transform.localScale;
+ 
         }
 
         public void SetNode(ProductGridNode node)
@@ -40,7 +53,7 @@ namespace Core
             _trail.emitting = true;
             CurrentNode.SetCube(null);
             CurrentNode = null;
-            GetComponent<Collider>().enabled = false;
+            _collider.enabled = false;
             
             transform.DOScale(_defaultScale + new Vector3(.1f, .1f,.1f), 0.05f).OnComplete(() =>
             {
@@ -71,7 +84,7 @@ namespace Core
                 })
                 .OnComplete(() =>
                 {
-                    transform.SetParent(box);
+                    transform.SetParent(box.GetChild(0));
                     transform.localPosition = Vector3.zero;
                     transform.localRotation = Quaternion.identity;
 
@@ -79,7 +92,7 @@ namespace Core
                     if (clone.TryGetComponent(out PooledParticle particle))
                     {
                         clone.SetActive(true);
-                        particle.PlayAt(transform.position,  Properties.ColorMaterial.color);
+                        particle.PlayAt(transform.position,  Properties.CubeColorMaterial.color);
                     }
                     
                     _trail.emitting = false;

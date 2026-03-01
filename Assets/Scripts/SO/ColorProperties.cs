@@ -6,9 +6,13 @@ namespace Core
     public class ColorProperties : ScriptableObject
     {
         [SerializeField] private BoxColor _boxColor;
-        [SerializeField] private Material _colorMaterial;
+        [SerializeField] private Material _boxColorMaterial;
+        [SerializeField] private Material _cubeColorMaterial;
+        [SerializeField] private float _adjustBrightness;
 
         public BoxColor BoxColor => _boxColor;
-        public Material ColorMaterial => _colorMaterial;
+        public Material BoxColorMaterial => _boxColorMaterial;
+        public Material CubeColorMaterial => _cubeColorMaterial;
+        public float AdjustBrightness => _adjustBrightness;
     }
 }
