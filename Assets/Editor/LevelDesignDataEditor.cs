@@ -1,7 +1,7 @@
 #if UNITY_EDITOR
-using System;
 using UnityEditor;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace Core
 {
@@ -15,14 +15,14 @@ namespace Core
 
         private const float CELL_SIZE = 28f;
         private const float CELL_PAD = 3f;
-        
+
         private int _selectedBoxX = -1;
         private int _selectedBoxY = -1;
 
         private SerializedProperty _boxNodeSize;
         private SerializedProperty _boxNodePrefab;
         private SerializedProperty _boxWorldPositionOffset;
-        private SerializedProperty _boxProperties;
+        private SerializedProperty _colorProperties;
         private SerializedProperty _boxPrefab;
         private SerializedProperty _boxObstaclePrefab;
         private SerializedProperty _productNodeSize;
@@ -32,15 +32,16 @@ namespace Core
             _boxNodeSize = serializedObject.FindProperty("_boxNodeSize");
             _boxNodePrefab = serializedObject.FindProperty("_boxNodePrefab");
             _boxWorldPositionOffset = serializedObject.FindProperty("_boxWorldPositionOffset");
-            _boxProperties = serializedObject.FindProperty("_boxProperties");
+            _colorProperties = serializedObject.FindProperty("_colorProperties");
             _boxPrefab = serializedObject.FindProperty("_boxPrefab");
             _boxObstaclePrefab = serializedObject.FindProperty("_boxObstaclePrefab");
             _productNodeSize = serializedObject.FindProperty("_productNodeSize");
         }
+
         public override void OnInspectorGUI()
         {
             var data = (LevelDesignData)target;
-            
+
             var newWidth = Mathf.Max(1, EditorGUILayout.IntField("ProductGridWidth", data.ProductGridWidth));
             var newHeight = Mathf.Max(1, EditorGUILayout.IntField("ProductGridHeight", data.ProductGridHeight));
 
@@ -49,7 +50,7 @@ namespace Core
             EditorGUILayout.PropertyField(_boxNodeSize);
             EditorGUILayout.PropertyField(_boxNodePrefab);
             EditorGUILayout.PropertyField(_boxWorldPositionOffset);
-            EditorGUILayout.PropertyField(_boxProperties, true);
+            EditorGUILayout.PropertyField(_colorProperties, true);
             EditorGUILayout.PropertyField(_boxPrefab);
             EditorGUILayout.PropertyField(_boxObstaclePrefab);
             EditorGUILayout.PropertyField(_productNodeSize);
@@ -61,7 +62,7 @@ namespace Core
                 Undo.RecordObject(data, "Resize Main Grid");
                 data.ProductGridWidth = newWidth;
                 data.ProductGridHeight = newHeight;
-                
+
                 data.EnsureSize();
                 EditorUtility.SetDirty(data);
             }
@@ -81,6 +82,7 @@ namespace Core
                 if (GUILayout.Button("Fill Red")) PaintFillMain(data, BoxColor.Red);
                 if (GUILayout.Button("Fill Green")) PaintFillMain(data, BoxColor.Green);
                 if (GUILayout.Button("Fill Blue")) PaintFillMain(data, BoxColor.Blue);
+                if (GUILayout.Button("Fill Random")) PaintRandomMain(data);
             }
 
             GUILayout.Space(6);
@@ -96,12 +98,155 @@ namespace Core
                 if (GUILayout.Button("Fill Red")) PaintFillBox(data, BoxColor.Red);
                 if (GUILayout.Button("Fill Green")) PaintFillBox(data, BoxColor.Green);
                 if (GUILayout.Button("Fill Blue")) PaintFillBox(data, BoxColor.Blue);
+                if (GUILayout.Button("Generate From Main Grid"))
+                    GenerateBoxesFromMainGrid(data);
             }
 
             GUILayout.Space(6);
             DrawGridBox(data);
-            
+
             DrawSelectedBoxCapacityEditor(data);
+        }
+
+        private static void PaintRandomMain(LevelDesignData data)
+        {
+            Undo.RecordObject(data, "Randomize Main Grid");
+
+            for (var y = 0; y < data.ProductGridHeight; y++)
+            {
+                for (var x = 0; x < data.ProductGridWidth; x++)
+                {
+                    var randomColor = (BoxColor)Random.Range(0, 3);
+                    data.Set(x, y, randomColor);
+                }
+            }
+
+            EditorUtility.SetDirty(data);
+        }
+
+        private static void GenerateBoxesFromMainGrid(LevelDesignData data)
+        {
+            Undo.RecordObject(data, "Generate Balanced Boxes");
+
+            var colorCounts = new System.Collections.Generic.Dictionary<BoxColor, int>();
+            
+            for (var y = 0; y < data.ProductGridHeight; y++)
+            {
+                for (var x = 0; x < data.ProductGridWidth; x++)
+                {
+                    var c = data.Get(x, y);
+                    if (c == BoxColor.Empty) continue;
+
+                    if (!colorCounts.ContainsKey(c))
+                        colorCounts[c] = 0;
+
+                    colorCounts[c]++;
+                }
+            }
+
+            var totalCells = 0;
+            foreach (var kvp in colorCounts)
+                totalCells += kvp.Value;
+
+            if (totalCells == 0)
+            {
+                EditorUtility.SetDirty(data);
+                return;
+            }
+
+            var totalBoxes = LevelDesignData.BoxWidth * LevelDesignData.BoxHeight; // 9
+            
+            var boxDistribution = new System.Collections.Generic.Dictionary<BoxColor, int>();
+            var assignedBoxes = 0;
+
+            foreach (var kvp in colorCounts)
+            {
+                var ratio = (float)kvp.Value / totalCells;
+                var boxCount = Mathf.FloorToInt(ratio * totalBoxes);
+                boxDistribution[kvp.Key] = boxCount;
+                assignedBoxes += boxCount;
+            }
+            
+            while (assignedBoxes < totalBoxes)
+            {
+                foreach (var color in colorCounts.Keys)
+                {
+                    boxDistribution[color]++;
+                    assignedBoxes++;
+                    if (assignedBoxes >= totalBoxes)
+                        break;
+                }
+            }
+            
+            var boxList = new System.Collections.Generic.List<(BoxColor color, int capacity)>();
+
+            foreach (var kvp in boxDistribution)
+            {
+                var color = kvp.Key;
+                var boxCount = kvp.Value;
+                var totalColorCount = colorCounts[color];
+
+                if (boxCount == 0) continue;
+
+                var baseCap = totalColorCount / boxCount;
+                var remainder = totalColorCount % boxCount;
+
+                for (var i = 0; i < boxCount; i++)
+                {
+                    var cap = baseCap;
+                    if (remainder > 0)
+                    {
+                        cap++;
+                        remainder--;
+                    }
+
+                    boxList.Add((color, cap));
+                }
+            }
+
+            for (var i = boxList.Count - 1; i > 0; i--)
+            {
+                var rand = Random.Range(0, i + 1);
+                var temp = boxList[i];
+                boxList[i] = boxList[rand];
+                boxList[rand] = temp;
+            }
+
+            for (var y = 0; y < LevelDesignData.BoxHeight; y++)
+            {
+                for (var x = 0; x < LevelDesignData.BoxWidth; x++)
+                {
+                    data.SetBox(x, y, BoxColor.Empty);
+                    data.SetBoxCapacity(x, y, 0);
+                }
+            }
+
+            for (var i = 0; i < boxList.Count && i < totalBoxes; i++)
+            {
+                var x = i % LevelDesignData.BoxWidth;
+                var y = i / LevelDesignData.BoxWidth;
+
+                data.SetBox(x, y, boxList[i].color);
+                data.SetBoxCapacity(x, y, boxList[i].capacity);
+            }
+
+            EditorUtility.SetDirty(data);
+        }
+
+        private static void PaintRandom(LevelDesignData data)
+        {
+            Undo.RecordObject(data, "Randomize Box Grid");
+
+            for (var y = 0; y < LevelDesignData.BoxHeight; y++)
+            {
+                for (var x = 0; x < LevelDesignData.BoxWidth; x++)
+                {
+                    var randomColor = (BoxColor)Random.Range(0, 3);
+                    data.SetBox(x, y, randomColor);
+                }
+            }
+
+            EditorUtility.SetDirty(data);
         }
 
 
@@ -118,7 +263,7 @@ namespace Core
             data.FillBox(c);
             EditorUtility.SetDirty(data);
         }
-        
+
         private static void DrawGridMain(LevelDesignData data)
         {
             for (var y = data.ProductGridHeight - 1; y >= 0; y--)
@@ -160,8 +305,8 @@ namespace Core
 
         private void DrawBoxCell(LevelDesignData data, int x, int y, BoxColor color, int cap)
         {
-
-            var r = GUILayoutUtility.GetRect(CELL_SIZE, CELL_SIZE, GUILayout.Width(CELL_SIZE), GUILayout.Height(CELL_SIZE));
+            var r = GUILayoutUtility.GetRect(CELL_SIZE, CELL_SIZE, GUILayout.Width(CELL_SIZE),
+                GUILayout.Height(CELL_SIZE));
 
             var prevBg = GUI.backgroundColor;
             GUI.backgroundColor = ToGuiColor(color);
@@ -206,7 +351,7 @@ namespace Core
         private void DrawSelectedBoxCapacityEditor(LevelDesignData data)
         {
             if (_selectedBoxX < 0 || _selectedBoxY < 0) return;
-            
+
             GUILayout.Space(10);
             EditorGUILayout.LabelField($"Selected Box: ({_selectedBoxX},{_selectedBoxY})", EditorStyles.miniBoldLabel);
 
@@ -221,7 +366,7 @@ namespace Core
                 EditorUtility.SetDirty(data);
             }
         }
-        
+
         private static void DrawCell(System.Action onClick, BoxColor current)
         {
             var prevBg = GUI.backgroundColor;
@@ -233,7 +378,7 @@ namespace Core
             GUI.backgroundColor = prevBg;
             GUILayout.Space(CELL_PAD);
         }
-        
+
         private static void DrawLegend()
         {
             EditorGUILayout.LabelField("Click a cell to cycle: Empty → Red → Green → Blue", EditorStyles.miniBoldLabel);
@@ -259,7 +404,11 @@ namespace Core
             var idx = 0;
             for (var i = 0; i < _cycleOrder.Length; i++)
             {
-                if (_cycleOrder[i] == current) { idx = i; break; }
+                if (_cycleOrder[i] == current)
+                {
+                    idx = i;
+                    break;
+                }
             }
 
             idx = (idx + dir) % _cycleOrder.Length;

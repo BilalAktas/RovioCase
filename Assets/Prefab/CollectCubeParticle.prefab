@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5192498210657103341}
   - component: {fileID: 1532589147901955549}
   - component: {fileID: 8124673768321369678}
+  - component: {fileID: 137747005067646690}
   m_Layer: 0
   m_Name: CollectCubeParticle
   m_TagString: Untagged
@@ -4894,3 +4895,15 @@ ParticleSystemRenderer:
   m_MeshWeighting1: 1
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
+--- !u!114 &137747005067646690
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6168219347348108372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93c33b983c474bfcad369cec70c4d62d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Core.PooledParticle
