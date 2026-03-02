@@ -6,7 +6,7 @@ WIN
 
 https://github.com/user-attachments/assets/d9dcdf12-0d79-4e35-a15e-716f2c325cfd
 
-ALL LEVELS GAME PLAY (BUILD)
+ALL LEVELS GAMEPLAY (BUILD)
 
 https://github.com/user-attachments/assets/428459a3-0cbb-4b49-8605-b972f09156d5
 
