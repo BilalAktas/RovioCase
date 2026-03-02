@@ -1,4 +1,5 @@
 using System;
+using Lofelt.NiceVibrations;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -32,6 +33,7 @@ namespace Core
 
         private void SpawnLevel()
         {
+            HapticPatterns.PlayPreset(HapticPatterns.PresetType.SoftImpact);
             var currentLevel = SaveLoadManager.GetLevel();
             var id = (currentLevel - 1) % _levelDesignDatas.Length;
             _currentLevelDesignData = _levelDesignDatas[id];

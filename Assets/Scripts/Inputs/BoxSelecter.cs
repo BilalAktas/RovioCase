@@ -1,4 +1,7 @@
+using Lofelt.NiceVibrations;
 using UnityEngine;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
+using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
 namespace Core
 {
@@ -14,22 +17,14 @@ namespace Core
         private void Update()
         {
             if (GameManager.GameState == GameState.Idle) return;
-            
-            if(Input.GetMouseButtonDown(0))
-                HandleStartDrag(Input.mousePosition);
-            
-            // if (Input.touchCount <= 0) return;
-            //
-            // var input = Input.GetTouch(0);
-            // switch (input.phase)
-            // {
-            //     case TouchPhase.Began:
-            //         HandleStartDrag(input.position);
-            //         break;
-            // }
+
+            if (Touch.activeTouches.Count == 0) return;
+
+            var t = Touch.activeTouches[0];
+            if(t.phase == TouchPhase.Began) HandleTap(t.screenPosition);
         }
    
-        private void HandleStartDrag(Vector3 pos)
+        private void HandleTap(Vector3 pos)
         {
             if (_firstSelect && Time.time - _currentTime < _coolDown) return;
 
@@ -42,6 +37,7 @@ namespace Core
                     if (!clickable.Clickable()) return;
                     clickable.Select();
                     _firstSelect = true;
+                    HapticPatterns.PlayPreset(HapticPatterns.PresetType.MediumImpact);
                 }
             }
         }

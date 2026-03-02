@@ -1,4 +1,5 @@
 using DG.Tweening;
+using Lofelt.NiceVibrations;
 using UnityEngine;
 
 namespace Core
@@ -48,6 +49,7 @@ namespace Core
             if (_boxAmount >= LevelManager.Instance.CurrentLevelDesignData.GetBoxAmount())
             {
                 DOTween.CompleteAll();
+                HapticPatterns.PlayPreset(HapticPatterns.PresetType.Success);
                 SaveLoadManager.IncreaseLevel();
                 GameState = GameState.Idle;
                 _levelCompleted.SetActive(true);
@@ -59,6 +61,7 @@ namespace Core
             if (GameState == GameState.Idle) return;
 
             DOTween.CompleteAll();
+            HapticPatterns.PlayPreset(HapticPatterns.PresetType.Failure);
             GameState = GameState.Idle;
             _levelFailed.SetActive(true);
         }
