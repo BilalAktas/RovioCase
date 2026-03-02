@@ -1,4 +1,3 @@
-using System;
 using Lofelt.NiceVibrations;
 using TMPro;
 using UnityEngine;
@@ -10,8 +9,7 @@ namespace Core
     {
         [SerializeField] private TextMeshProUGUI _levelText;
         [SerializeField] private LevelDesignData[] _levelDesignDatas;
-        private LevelDesignData _currentLevelDesignData;
-        public LevelDesignData CurrentLevelDesignData => _currentLevelDesignData;
+        public LevelDesignData CurrentLevelDesignData { get; private set; }
         
         [SerializeField] private Button _nextButton;
         [SerializeField] private Button _retryButton;
@@ -36,7 +34,7 @@ namespace Core
             HapticPatterns.PlayPreset(HapticPatterns.PresetType.SoftImpact);
             var currentLevel = SaveLoadManager.GetLevel();
             var id = (currentLevel - 1) % _levelDesignDatas.Length;
-            _currentLevelDesignData = _levelDesignDatas[id];
+            CurrentLevelDesignData = _levelDesignDatas[id];
             SetLevelText();
             EventBus.Raise(new OnLevelSpawnedEvent());
         }

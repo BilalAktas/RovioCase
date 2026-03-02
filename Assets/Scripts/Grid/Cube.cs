@@ -1,4 +1,3 @@
-using System;
 using DG.Tweening;
 using UnityEngine;
 
@@ -92,8 +91,6 @@ namespace Core
                 .OnComplete(() =>
                 {
                     transform.SetParent(box.GetChild(0));
-                    transform.localPosition = Vector3.zero;
-                    transform.localRotation = Quaternion.identity;
 
                     var clone = ObjectPool.Instance.GetFromPool("CubeCollectParticle");
                     if (clone.TryGetComponent(out PooledParticle particle))

@@ -4,29 +4,29 @@ namespace Core
 {
     public class PooledParticle : MonoBehaviour
     {
-        private ParticleSystem _ps;
-        private ParticleSystemRenderer _psr;
+        private ParticleSystem _particleSystem;
+        private ParticleSystemRenderer _particleSystemRenderer;
 
-        private MaterialPropertyBlock _mpb;
+        private MaterialPropertyBlock _materialPropertyBlock;
         private static readonly int _baseColorId = Shader.PropertyToID("_BaseColor");
 
         private void Awake()
         {
-            if (_ps == null) _ps = GetComponent<ParticleSystem>();
-            if (_psr == null) _psr = GetComponent<ParticleSystemRenderer>();
+            _particleSystem = GetComponent<ParticleSystem>();
+            _particleSystemRenderer = GetComponent<ParticleSystemRenderer>();
 
-            _mpb ??= new MaterialPropertyBlock();
+            _materialPropertyBlock ??= new MaterialPropertyBlock();
         }
 
         public void PlayAt(Vector3 worldPos, Color color)
         {
             transform.position = worldPos;
             
-            _psr.GetPropertyBlock(_mpb);
-            _mpb.SetColor(_baseColorId, color);
-            _psr.SetPropertyBlock(_mpb);
+            _particleSystemRenderer.GetPropertyBlock(_materialPropertyBlock);
+            _materialPropertyBlock.SetColor(_baseColorId, color);
+            _particleSystemRenderer.SetPropertyBlock(_materialPropertyBlock);
 
-            _ps.Play(true);
+            _particleSystem.Play(true);
         }
     }
 }

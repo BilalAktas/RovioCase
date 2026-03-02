@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using DG.Tweening;
 using TMPro;
@@ -18,7 +17,7 @@ namespace Core
         [SerializeField] private BoxProperties _boxProperties;
         private ColorProperties _colorProperties;
         private MaterialPropertyBlock _propertyBlock;
-        private static readonly int _baseColorId = Shader.PropertyToID("_AlbedoColor");
+        private static readonly int _albedoColorId = Shader.PropertyToID("_AlbedoColor");
         private Renderer[] _renderers;
         [Header("CollectCube")]
         [SerializeField] private TextMeshProUGUI _cubeAmountText;
@@ -41,10 +40,12 @@ namespace Core
         private Sequence _collectSequence;
         private Camera _cam;
         private ProductDepthDirection _currentDir;
+        private Transform _rendererTransform;
         
         private void Awake()
         {
             _renderers = GetComponentsInChildren<Renderer>();
+            _rendererTransform = transform.GetChild(0);
         }
 
         public void SetProperties(ColorProperties properties, BoxGridNode node, int maxCubeAmount)
@@ -57,7 +58,7 @@ namespace Core
             foreach (var renderer in _renderers)
             {
                 renderer.GetPropertyBlock(_propertyBlock);
-                _propertyBlock.SetColor(_baseColorId, _colorProperties.BoxColorMaterialColor);
+                _propertyBlock.SetColor(_albedoColorId, _colorProperties.BoxColorMaterialColor);
                 renderer.SetPropertyBlock(_propertyBlock);
             }
             
@@ -125,37 +126,20 @@ namespace Core
             _clickableStatus = state;
             
             _propertyBlock = new MaterialPropertyBlock();
-            if (!state)
+            
+            var c = _cubeAmountText.color;
+            c.a = !state ? .35f : 1f;
+            _cubeAmountText.color = c;
+            
+            foreach (var r in _renderers)
             {
-                var c = _cubeAmountText.color;
-                c.a = .35f;
-                _cubeAmountText.color = c;
-                
-                foreach (var renderer in _renderers)
-                {
-                    var newColor = Helpers.AdjustBrightness(_colorProperties.BoxColorMaterialColor, _colorProperties.AdjustBrightness);
-                    newColor.a = 1f;
+                var newColor = !state ? Helpers.AdjustBrightness(_colorProperties.BoxColorMaterialColor, _colorProperties.AdjustBrightness) : 
+                    Helpers.AdjustBrightness(_colorProperties.BoxColorMaterialColor, 0);
+                newColor.a = 1f;
                     
-                    renderer.GetPropertyBlock(_propertyBlock);
-                    _propertyBlock.SetColor(_baseColorId, newColor);
-                    renderer.SetPropertyBlock(_propertyBlock);
-                }
-            }
-            else
-            {
-                var c = _cubeAmountText.color;
-                c.a = 1f;
-                _cubeAmountText.color = c;
-                
-                foreach (var renderer in _renderers)
-                {
-                    var newColor = Helpers.AdjustBrightness(_colorProperties.BoxColorMaterialColor, 0);
-                    newColor.a = 1f;
-                    
-                    renderer.GetPropertyBlock(_propertyBlock);
-                    _propertyBlock.SetColor(_baseColorId, newColor);
-                    renderer.SetPropertyBlock(_propertyBlock);
-                }
+                r.GetPropertyBlock(_propertyBlock);
+                _propertyBlock.SetColor(_albedoColorId, newColor);
+                r.SetPropertyBlock(_propertyBlock);
             }
         }
 
@@ -257,7 +241,6 @@ namespace Core
 
                     if (cube != _lastCube)
                     {
-                        //Debug.Log($"lockedCheck {currentDir} -- {cube.name}  - {cube.Properties.BoxColor}");
                         if (ProductAreaManager.IsFirstColumnToGet(currentDir, cube))
                         {
                             _lastCube = cube;
@@ -265,13 +248,10 @@ namespace Core
                             var index = ProductAreaManager.GetDepthColumnIndex(currentDir,
                                 _lastCube.CurrentNode);
                                  
-                            //Debug.Log($"lockedCheck {currentDir} -- {index} -- {cube.name} -- {_lockedColumns[currentDir].Contains(index)} - {cube.Properties.BoxColor}");
-                            
                             if (!_lockedColumns[currentDir].Contains(index))
                             {
                                 if (cube.Properties.BoxColor != _colorProperties.BoxColor) return;
                                 
-                                //Debug.Log($"add locked {index} - {currentDir} - {cube.name}");
                                 _rCubeAmount++;
                                 if (_rCubeAmount >= _maxCubeAmount)
                                 {
@@ -291,14 +271,13 @@ namespace Core
         
         private void OnCollectCubeEffect()
         {
-            //transform.DOComplete();
             _collectSequence.Complete();
             _collectSequence = DOTween.Sequence();
 
-            _collectSequence.Append(transform.GetChild(0).DOScale(new Vector3(1.15f, 1f, 1.1f), 0.08f)
+            _collectSequence.Append(_rendererTransform.DOScale(new Vector3(1.15f, 1f, 1.1f), 0.08f)
                 .SetEase(Ease.OutQuad));
             
-            _collectSequence.Append(transform.GetChild(0).DOScale(Vector3.one, 0.3f)
+            _collectSequence.Append(_rendererTransform.DOScale(Vector3.one, 0.3f)
                 .SetEase(Ease.OutElastic));
             
             _collectSequence.OnComplete(() =>
@@ -315,14 +294,11 @@ namespace Core
                 {
                     var sequence = DOTween.Sequence();
                 
-                    sequence.Append(transform.GetChild(0).DOScale(new Vector3(1.5f, 1.5f, 1.5f), .2f)
+                    sequence.Append(_rendererTransform.DOScale(new Vector3(1.5f, 1.5f, 1.5f), .2f)
                         .SetEase(Ease.Linear));
-            
-                    // sequence.Append(transform.GetChild(0).DOScale(Vector3.one, 0.3f)
-                    //     .SetEase(Ease.OutElastic));
 
                     sequence.Append(
-                        transform.GetChild(0).DORotate(new Vector3(0, 360f * 3, 0), 0.5f, RotateMode.FastBeyond360)
+                        _rendererTransform.DORotate(new Vector3(0, 360f * 3, 0), 0.5f, RotateMode.FastBeyond360)
                             .SetEase(Ease.InOutSine)
                     );
 
@@ -365,7 +341,6 @@ namespace Core
         
         private ProductDepthDirection GetBoxDirection()
         {
-            //Debug.Log($"dirY {transform.localEulerAngles.y}");
             if (transform.localEulerAngles.y > 250 && transform.localEulerAngles.y < 300)
                 _currentDir = ProductDepthDirection.Up;
             else if (transform.localEulerAngles.y > 300 && transform.localEulerAngles.y < 320f)
@@ -389,10 +364,7 @@ namespace Core
                 area.Visual.transform.position + Vector3.up * 1f
             };
 
-            transform.DOPath(poses.ToArray(), .5f, PathType.CatmullRom).SetEase(Ease.InOutSine).OnComplete(() =>
-            {
-                ClearAllLockedColumns();
-            });
+            transform.DOPath(poses.ToArray(), .5f, PathType.CatmullRom).SetEase(Ease.InOutSine).OnComplete(ClearAllLockedColumns);
         }
     }
 }

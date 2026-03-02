@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Core
 {
@@ -32,13 +31,14 @@ namespace Core
         [SerializeField] private int[] _boxCaps;
         [SerializeField] private BoxColor[] _cells;
 
-        public ColorProperties GetBoxPropertyByColor(BoxColor color)
+        public ColorProperties GetPropertyByColor(BoxColor color)
         {
             foreach (var property in ColorProperties)
                 if (property.BoxColor == color) return property;
 
             return null;
         }
+        
         
         public void EnsureSize()
         {

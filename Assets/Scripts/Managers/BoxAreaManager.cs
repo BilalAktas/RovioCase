@@ -12,6 +12,7 @@ namespace Core
         private Vector2Int _gridSize;
         private readonly List<GameObject> _spawnedBoxes = new();
         private readonly List<GameObject> _spawnedObstacles = new();
+        private readonly List<GameObject> _spawnedNodes = new();
         private static readonly Vector2Int[] ClickableCheckDirs =
         {
             new Vector2Int(0, 1),
@@ -36,6 +37,10 @@ namespace Core
                 Destroy(obstacle);
             _spawnedObstacles.Clear();
             
+            foreach (var node in _spawnedNodes)
+                Destroy(node);
+            _spawnedNodes.Clear();
+            
             _currentLevelDesignData = LevelManager.Instance.CurrentLevelDesignData;
             _gridSize = new Vector2Int(_currentLevelDesignData.BoxGridSize.x, _currentLevelDesignData.BoxGridSize.y);
             CreateGrid();
@@ -59,6 +64,7 @@ namespace Core
                 {
                     var clone = Instantiate(_currentLevelDesignData.NodePrefab, transform);
                     clone.transform.localPosition = worldPos;
+                    _spawnedNodes.Add(clone);
 
                     return new BoxGridNode(worldPos, gridPos);
                 },
@@ -75,7 +81,7 @@ namespace Core
                     else
                     {
                         var clone = Instantiate(_currentLevelDesignData.BoxPrefab, transform);
-                        var rp = _currentLevelDesignData.GetBoxPropertyByColor(color);
+                        var rp = _currentLevelDesignData.GetPropertyByColor(color);
                         var box = clone.GetComponent<Box>();
                         box.enabled = true;
                         clone.transform.localPosition = worldPos;
@@ -103,7 +109,7 @@ namespace Core
                 var box = node.CurrentBox;
                 if (!box) continue;
 
-                bool clickable = IsPositionFirstOnGrid(node.GridPosition) || HasFreeNeighbor(node.GridPosition);
+                var clickable = IsPositionFirstOnGrid(node.GridPosition) || HasFreeNeighbor(node.GridPosition);
                 box.SetClickableStatus(clickable, gameStart);
             }
         }

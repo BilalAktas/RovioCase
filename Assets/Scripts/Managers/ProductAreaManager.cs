@@ -5,11 +5,11 @@ namespace Core
 {
     public class ProductAreaManager : MonoBehaviour
     {
+        [Header("Level")]
         private LevelDesignData _currentLevelDesignData;
         [Header("Grid")]
         private ProductGridNode[,] _grid;
         private static Vector2Int _gridSize;
-        private Vector3 _bottomLeft;
         [Header("DepthColumn")] 
         private static Dictionary<ProductDepthDirection, List<ProductGridNode>> _depthColumns = new();
         private readonly List<Cube> _spawnedCubes = new();
@@ -31,13 +31,11 @@ namespace Core
             if (_grid != null)
             {
                 for (var x = 0; x < _gridSize.x; x++)
-                {
                     for (var y = 0; y < _gridSize.y; y++)
                     {
                         var node = _grid[x, y];
                         ObjectPool.Instance.Deposit(node.Visual, "ProductNodePrefab");
                     }
-                }
             }
 
             foreach (var cube in _spawnedCubes)
@@ -84,15 +82,7 @@ namespace Core
 
                     node.SetCube(cube);
                     cube.SetNode(node);
-                    
-                    foreach (var property in _currentLevelDesignData.ColorProperties)
-                    {
-                        if (property.BoxColor == c)
-                        {
-                            cube.SetProperties(property);
-                            break;
-                        }
-                    }
+                    cube.SetProperties(_currentLevelDesignData.GetPropertyByColor(c));
 
                     _spawnedCubes.Add(cube);
                 }
@@ -124,55 +114,47 @@ namespace Core
             var leftColumns = new List<ProductGridNode>();
             
             for (var i = _gridSize.x - 1; i >= 0; i--)
+            for (var j = 0; j < _gridSize.y; j++)
             {
-                for (var j = 0; j < _gridSize.y; j++)
+                var n = _grid[i, j];
+                if (n.CurrentCube)
                 {
-                    var n = _grid[i, j];
-                    if (n.CurrentCube)
-                    {
-                        upColumns.Add(n);
-                        break;
-                    }
+                    upColumns.Add(n);
+                    break;
                 }
             }
             
             for (var i = 0; i < _gridSize.y; i++)
+            for (var j = 0; j < _gridSize.x; j++)
             {
-                for (var j = 0; j < _gridSize.x; j++)
+                var n = _grid[j, i];
+                if (n.CurrentCube)
                 {
-                    var n = _grid[j, i];
-                    if (n.CurrentCube)
-                    {
-                        rightColumns.Add(n);
-                        break;
-                    }
+                    rightColumns.Add(n);
+                    break;
                 }
             }
             
             for (var i = 0; i < _gridSize.x; i++)
+            for (var j = _gridSize.y - 1; j >= 0; j--)
             {
-                for (var j = _gridSize.y - 1; j >= 0; j--)
+                var n = _grid[i, j];
+                if (n.CurrentCube)
                 {
-                    var n = _grid[i, j];
-                    if (n.CurrentCube)
-                    {
-                        downColumns.Add(n);
-                        break;
-                    }
+                    downColumns.Add(n);
+                    break;
                 }
             }
 
             for (var i = _gridSize.y - 1; i >= 0; i--)
+            for (var j = _gridSize.x - 1; j >= 0; j--)
             {
-                for (var j = _gridSize.x - 1; j >= 0; j--)
+                var n = _grid[j, i];
+                if (n.CurrentCube)
                 {
-                    var n = _grid[j, i];
-                    if (n.CurrentCube)
-                    {
-                        leftColumns.Add(n);
-                        break;
-                    }   
-                }
+                    leftColumns.Add(n);
+                    break;
+                }   
             }
             
             _depthColumns[ProductDepthDirection.Up] = upColumns;
@@ -182,14 +164,7 @@ namespace Core
             
         }
 
-        public static bool IsFirstColumnToGet(ProductDepthDirection dir, Cube cube)
-        {
-            //Debug.Log($"dir {dir} -- {cube.name} -- get -- {_depthColumns[dir].Contains(cube.CurrentNode)}");
-            if (_depthColumns[dir].Contains(cube.CurrentNode))
-                return true;
-
-            return false;
-        }
+        public static bool IsFirstColumnToGet(ProductDepthDirection dir, Cube cube) =>  _depthColumns[dir].Contains(cube.CurrentNode);
 
         public static bool IsLastColumn(ProductDepthDirection dir, ProductGridNode node)
         {
@@ -218,8 +193,8 @@ namespace Core
 
         public static int GetDepthColumnIndex(ProductDepthDirection dir, ProductGridNode node)
         {
-            int x = node.GridPosition.x;
-            int y = node.GridPosition.y;
+            var x = node.GridPosition.x;
+            var y = node.GridPosition.y;
 
             return dir switch
             {

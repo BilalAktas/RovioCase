@@ -19,7 +19,7 @@ namespace Core
         
         private void Start()
         {
-            Application.targetFrameRate = 60; // TEST BUILD.
+            //Application.targetFrameRate = 60;
             
             EventBus.Subscribe<OnLevelSpawnedEvent>(OnLevelSpawned);
             EventBus.Subscribe<OnLevelFailedEvent>(OnLevelFail);

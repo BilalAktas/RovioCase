@@ -1,5 +1,6 @@
 using Lofelt.NiceVibrations;
 using UnityEngine;
+using UnityEngine.InputSystem.EnhancedTouch;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
@@ -12,8 +13,13 @@ namespace Core
         private bool _firstSelect;
         
         private Camera _camera;
-        private void Start() => _camera = Camera.main;
 
+        private void Start()
+        {
+            EnhancedTouchSupport.Enable();
+            _camera = Camera.main;
+        }
+        
         private void Update()
         {
             if (GameManager.GameState == GameState.Idle) return;

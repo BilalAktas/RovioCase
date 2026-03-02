@@ -154,7 +154,7 @@ namespace Core
                 return;
             }
 
-            var totalBoxes = LevelDesignData.BoxWidth * LevelDesignData.BoxHeight; // 9
+            var totalBoxes = LevelDesignData.BoxWidth * LevelDesignData.BoxHeight;
             
             var boxDistribution = new System.Collections.Generic.Dictionary<BoxColor, int>();
             var assignedBoxes = 0;
